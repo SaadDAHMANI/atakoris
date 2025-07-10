@@ -1,0 +1,147 @@
+use super::*;
+use serde::{Deserialize, Serialize};
+//-----------------------------------Junction----------------------------
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Junction {
+    pub id: usize,
+    pub elevation: f64,
+    pub demand: f64,
+    pub pattern: Option<usize>,
+    pub name: Option<String>,
+    pub head: Option<f64>,
+    #[cfg(feature = "optimization")]
+    target_head: Option<f64>,
+    pub pressure: Option<f64>,
+}
+
+impl Junction {
+    pub fn new(id: usize, elevation: f64, demand: f64) -> JunctionBuilder {
+        JunctionBuilder {
+            id,
+            elevation,
+            demand,
+            name: None,
+            head: None,
+            pattern: None,
+            #[cfg(feature = "optimization")]
+            target_head: None,
+        }
+    }
+
+    #[cfg(feature = "optimization")]
+    pub fn set_target_head(&mut self, required_head: f64) {
+        self.target_head = Some(required_head);
+    }
+
+    #[cfg(feature = "optimization")]
+    pub fn get_target_head(&self) -> Option<f64> {
+        self.target_head
+    }
+}
+
+impl Node for Junction {
+    fn get_id(&self) -> usize {
+        self.id
+    }
+
+    fn node_type(&self) -> NodeType {
+        NodeType::Junction
+    }
+    fn to_string(&self) -> String {
+        format!(
+            "id: {}, categ.: {:?}, demand: {}, elev.: {}, name: {:?}, head: {:?}, pressure: {:?}",
+            self.id,
+            self.node_type(),
+            self.demand,
+            self.elevation,
+            self.name,
+            self.head,
+            self.pressure()
+        )
+    }
+
+    fn get_elevation(&self) -> f64 {
+        self.elevation
+    }
+
+    fn get_head(&self) -> Option<f64> {
+        self.head
+    }
+}
+
+impl Default for Junction {
+    fn default() -> Self {
+        Junction::new(0, 0.0f64, 0.0f64).build()
+    }
+}
+
+pub struct JunctionBuilder {
+    id: usize,
+    elevation: f64,
+    demand: f64,
+    pattern: Option<usize>,
+    name: Option<String>,
+    head: Option<f64>,
+    #[cfg(feature = "optimization")]
+    target_head: Option<f64>,
+}
+impl JunctionBuilder {
+    pub fn new() -> Self {
+        let jb = JunctionBuilder {
+            id: 0,
+            elevation: 0.0f64,
+            demand: 0.0f64,
+            pattern: None,
+            name: None,
+            head: None,
+            #[cfg(feature = "optimization")]
+            target_head: None,
+        };
+        jb
+    }
+
+    pub fn set_id(&mut self, id: usize) -> &mut Self {
+        self.id = id;
+        self
+    }
+
+    pub fn set_elevation(&mut self, elevation: f64) -> &mut Self {
+        self.elevation = elevation;
+        self
+    }
+
+    pub fn set_demand(&mut self, demand: f64) -> &mut Self {
+        self.demand = demand;
+        self
+    }
+
+    pub fn set_pattern(&mut self, pattern: Option<usize>) -> &mut Self {
+        self.pattern = pattern;
+        self
+    }
+
+    pub fn set_name(&mut self, name: &str) -> &mut Self {
+        self.name = Some(name.to_string());
+        self
+    }
+
+    #[cfg(feature = "optimization")]
+    pub fn set_target_head(&mut self, required_head: f64) -> &mut Self {
+        self.target_head = Some(required_head);
+        self
+    }
+
+    pub fn build(&mut self) -> Junction {
+        Junction {
+            id: self.id,
+            name: self.name.clone(),
+            elevation: self.elevation,
+            demand: self.demand,
+            head: self.head,
+            pattern: self.pattern,
+            pressure: None,
+            #[cfg(feature = "optimization")]
+            target_head: self.target_head,
+        }
+    }
+}

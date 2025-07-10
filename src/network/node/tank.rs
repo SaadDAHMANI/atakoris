@@ -1,0 +1,112 @@
+use super::*;
+use serde::{Deserialize, Serialize};
+//-----------------------------------Tank-------------------------------
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tank {
+    pub id: usize,
+    pub name: Option<String>,
+    pub elevation: f64,
+    //pub head : Option<f64>,
+    pub initial_level: f64,
+    //pub min_level : f64,
+    //pub max_level : f64,
+    //pub diameter : f64,
+    //pub min_volume : f64,
+    //pub volume_curve_id : Option<usize>,
+    //pub overflow_indicator : bool,
+}
+
+impl Tank {
+    pub fn new(id: usize, elevation: f64, initial_level: f64) -> TankBuilder {
+        TankBuilder {
+            id,
+            elevation,
+            initial_level,
+            name: None,
+        }
+    }
+
+    pub fn head(&self) -> f64 {
+        self.elevation + self.initial_level
+    }
+}
+
+impl Node for Tank {
+    fn get_id(&self) -> usize {
+        self.id
+    }
+
+    fn node_type(&self) -> NodeType {
+        NodeType::Tank
+    }
+    fn to_string(&self) -> String {
+        format!(
+            "id: {}, name: {:?}, ategory: {:?}, elevation: {}, initial-level: {:?}",
+            self.id,
+            self.name,
+            self.node_type(),
+            self.elevation,
+            self.initial_level
+        )
+    }
+}
+
+impl Default for Tank {
+    fn default() -> Self {
+        Tank::new(0usize, 100.0f64, 2.0f64).build()
+    }
+}
+
+pub struct TankBuilder {
+    pub id: usize,
+    pub name: Option<String>,
+    pub elevation: f64,
+    //pub head : Option<f64>,
+    pub initial_level: f64,
+    //pub min_level : f64,
+    //pub max_level : f64,
+    //pub diameter : f64,
+    //pub min_volume : f64,
+    //pub volume_curve_id : Option<usize>,
+    //pub overflow_indicator : bool,
+}
+
+impl TankBuilder {
+    pub fn new() -> Self {
+        TankBuilder {
+            id: 0,
+            name: None,
+            elevation: 0.0f64,
+            initial_level: 0.0f64,
+        }
+    }
+
+    pub fn set_id(&mut self, id: usize) -> &mut Self {
+        self.id = id;
+        self
+    }
+
+    pub fn set_name(&mut self, name: &str) -> &mut Self {
+        self.name = Some(name.to_string());
+        self
+    }
+
+    pub fn set_elevation(&mut self, elevation: f64) -> &mut Self {
+        self.elevation = elevation;
+        self
+    }
+
+    pub fn set_initial_level(&mut self, initial_level: f64) -> &mut Self {
+        self.initial_level = initial_level;
+        self
+    }
+
+    pub fn build(&self) -> Tank {
+        Tank {
+            id: self.id,
+            name: self.name.clone(),
+            elevation: self.elevation,
+            initial_level: self.initial_level,
+        }
+    }
+}

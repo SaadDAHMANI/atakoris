@@ -1,0 +1,13 @@
+[package]
+name = "bin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+once_cell ="1.17.1"
+atakor ={path = "./atakor",features = ["report"]}
+sefar = {path = "/home/sd/Documents/Rust_apps/sefar_v002", features  = ["show_report"]}
+dataset = {path = "/home/sd/Documents/Rust_apps/dataset"}
+
