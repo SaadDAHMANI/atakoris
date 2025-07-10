@@ -1,20 +1,20 @@
 //include!("benchmark.rs");
 
-use atakor::ffi_dto::*;
+use atakoris::ffi_dto::*;
 
-use atakor::network::Network;
+use atakoris::network::Network;
 /* use std::fs::File;
 use std::io::prelude::*;
 
 use std::str::FromStr;
  */
-use atakor::parsers::inpfileparser::InpFileParser;
+use atakoris::parsers::inpfileparser::InpFileParser;
 //use atakor::network::*;
 //use atakor::network::node::junction::*;
-use atakor::network::link::Link;
-use atakor::network::node::Node;
+use atakoris::network::link::Link;
+use atakoris::network::node::Node;
 
-use atakor::solver::Solver;
+use atakoris::solver::Solver;
 
 pub mod benchmark;
 use benchmark::benchmark::*;

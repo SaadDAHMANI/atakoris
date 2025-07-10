@@ -1,14 +1,14 @@
 pub mod benchmark {
-    use atakor::network::node::junction::{Junction, JunctionBuilder};
-    use atakor::network::node::tank::{Tank, TankBuilder};
-    use atakor::network::{Network, NetworkBuilder};
+    use atakoris::network::node::junction::{Junction, JunctionBuilder};
+    use atakoris::network::node::tank::{Tank, TankBuilder};
+    use atakoris::network::{Network, NetworkBuilder};
     //use atakor::network::node::reservoir::{Reservoir, ReservoirBuilder};
 
-    use atakor::network::link::LinkStatus;
-    use atakor::network::link::pipe::{Pipe, PipeBuilder};
-    use atakor::network::link::pump::{Pump, PumpBuilder};
+    use atakoris::network::link::LinkStatus;
+    use atakoris::network::link::pipe::{Pipe, PipeBuilder};
+    use atakoris::network::link::pump::{Pump, PumpBuilder};
 
-    use atakor::network::{FlowUnits, HeadlossFormula, Options, OptionsBuilder};
+    use atakoris::network::{FlowUnits, HeadlossFormula, Options, OptionsBuilder};
 
     #[allow(dead_code)]
     pub fn network3() -> Network {
