@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Junction {
     pub id: usize,
+    pub position: Position,
     pub elevation: f64,
     pub demand: f64,
     pub pattern: Option<usize>,
@@ -18,6 +19,7 @@ impl Junction {
     pub fn new(id: usize, elevation: f64, demand: f64) -> JunctionBuilder {
         JunctionBuilder {
             id,
+            position: Position::default(),
             elevation,
             demand,
             name: None,
@@ -42,6 +44,10 @@ impl Junction {
 impl Node for Junction {
     fn get_id(&self) -> usize {
         self.id
+    }
+
+    fn get_position(&self) -> Position {
+        self.position.clone()
     }
 
     fn node_type(&self) -> NodeType {
@@ -77,6 +83,7 @@ impl Default for Junction {
 
 pub struct JunctionBuilder {
     id: usize,
+    position: Position,
     elevation: f64,
     demand: f64,
     pattern: Option<usize>,
@@ -89,6 +96,7 @@ impl JunctionBuilder {
     pub fn new() -> Self {
         let jb = JunctionBuilder {
             id: 0,
+            position: Position::default(),
             elevation: 0.0f64,
             demand: 0.0f64,
             pattern: None,
@@ -100,41 +108,47 @@ impl JunctionBuilder {
         jb
     }
 
-    pub fn set_id(&mut self, id: usize) -> &mut Self {
+    pub fn set_id(mut self, id: usize) -> Self {
         self.id = id;
         self
     }
 
-    pub fn set_elevation(&mut self, elevation: f64) -> &mut Self {
+    pub fn set_position(mut self, pos: Position) -> Self {
+        self.position = pos;
+        self
+    }
+
+    pub fn set_elevation(mut self, elevation: f64) -> Self {
         self.elevation = elevation;
         self
     }
 
-    pub fn set_demand(&mut self, demand: f64) -> &mut Self {
+    pub fn set_demand(mut self, demand: f64) -> Self {
         self.demand = demand;
         self
     }
 
-    pub fn set_pattern(&mut self, pattern: Option<usize>) -> &mut Self {
+    pub fn set_pattern(mut self, pattern: Option<usize>) -> Self {
         self.pattern = pattern;
         self
     }
 
-    pub fn set_name(&mut self, name: &str) -> &mut Self {
+    pub fn set_name(mut self, name: &str) -> Self {
         self.name = Some(name.to_string());
         self
     }
 
     #[cfg(feature = "optimization")]
-    pub fn set_target_head(&mut self, required_head: f64) -> &mut Self {
+    pub fn set_target_head(mut self, required_head: f64) -> Self {
         self.target_head = Some(required_head);
         self
     }
 
-    pub fn build(&mut self) -> Junction {
+    pub fn build(self) -> Junction {
         Junction {
             id: self.id,
-            name: self.name.clone(),
+            position: self.position,
+            name: self.name,
             elevation: self.elevation,
             demand: self.demand,
             head: self.head,

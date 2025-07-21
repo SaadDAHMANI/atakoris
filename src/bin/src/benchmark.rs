@@ -1,7 +1,7 @@
 pub mod benchmark {
     use atakoris::network::node::junction::{Junction, JunctionBuilder};
     use atakoris::network::node::tank::{Tank, TankBuilder};
-    use atakoris::network::{Network, NetworkBuilder};
+    use atakoris::network::{Network, NetworkBuilder, Position};
     //use atakor::network::node::reservoir::{Reservoir, ReservoirBuilder};
 
     use atakoris::network::link::LinkStatus;
@@ -12,8 +12,7 @@ pub mod benchmark {
 
     #[allow(dead_code)]
     pub fn network3() -> Network {
-        let mut t1b = TankBuilder::new();
-        let t1: Tank = t1b
+        let t1: Tank = TankBuilder::new()
             .set_id(0)
             .set_name("T1")
             .set_elevation(100.00)
@@ -93,6 +92,7 @@ pub mod benchmark {
     pub fn network4() -> Network {
         let t1 = Tank {
             id: 0,
+            position: Position::default(),
             name: Some(String::from("T1")),
             elevation: 100.0,
             initial_level: 0.0,
@@ -100,6 +100,7 @@ pub mod benchmark {
 
         let t2 = Tank {
             id: 3,
+            position: Position::default(),
             name: Some(String::from("T2")),
             elevation: 100.0,
             initial_level: 0.0,

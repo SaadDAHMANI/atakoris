@@ -121,20 +121,20 @@ impl OptionsBuilder {
         }
     }
 
-    pub fn set_flow_unit(&mut self, flow_unit: FlowUnits) -> &mut Self {
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
         self.flow_unit = flow_unit;
         self
     }
 
-    pub fn set_headlossformula(&mut self, headlossformula: HeadlossFormula) -> &mut Self {
+    pub fn set_headlossformula(mut self, headlossformula: HeadlossFormula) -> Self {
         self.headloss_formula = headlossformula;
         self
     }
 
-    pub fn build(&self) -> Options {
+    pub fn build(self) -> Options {
         Options {
-            flow_unit: self.flow_unit.clone(),
-            headloss_formula: self.headloss_formula.clone(),
+            flow_unit: self.flow_unit,
+            headloss_formula: self.headloss_formula,
             viscosity: 0.0000001f64,
             trials: 40,
             accuracy: 0.0001,

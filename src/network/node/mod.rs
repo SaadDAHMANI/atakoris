@@ -3,6 +3,8 @@ pub mod junction;
 pub mod reservoir;
 pub mod tank;
 
+use super::Position;
+
 //use super::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +20,10 @@ pub trait Node {
     fn get_id(&self) -> usize;
 
     fn node_type(&self) -> NodeType;
+
+    fn get_position(&self) -> Position {
+        Position::new(0.0, 0.0)
+    }
 
     fn get_head(&self) -> Option<f64> {
         None

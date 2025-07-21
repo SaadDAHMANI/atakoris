@@ -3,6 +3,7 @@ use core::panic;
 use serde::{Deserialize, Serialize};
 pub mod link;
 pub mod node;
+pub mod position;
 
 use node::junction::Junction;
 use node::reservoir::Reservoir;
@@ -11,6 +12,8 @@ use node::tank::Tank;
 use link::pipe::Pipe;
 use link::pump::Pump;
 use link::valve::Valve;
+
+pub use position::Position;
 
 use super::parsers::inpfileparser::InpFileParser;
 

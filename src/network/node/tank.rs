@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tank {
     pub id: usize,
+    pub position: Position,
     pub name: Option<String>,
     pub elevation: f64,
     //pub head : Option<f64>,
@@ -20,6 +21,7 @@ impl Tank {
     pub fn new(id: usize, elevation: f64, initial_level: f64) -> TankBuilder {
         TankBuilder {
             id,
+            position: Position::default(),
             elevation,
             initial_level,
             name: None,
@@ -34,6 +36,10 @@ impl Tank {
 impl Node for Tank {
     fn get_id(&self) -> usize {
         self.id
+    }
+
+    fn get_position(&self) -> Position {
+        self.position.clone()
     }
 
     fn node_type(&self) -> NodeType {
@@ -59,6 +65,7 @@ impl Default for Tank {
 
 pub struct TankBuilder {
     pub id: usize,
+    pub position: Position,
     pub name: Option<String>,
     pub elevation: f64,
     //pub head : Option<f64>,
@@ -75,36 +82,43 @@ impl TankBuilder {
     pub fn new() -> Self {
         TankBuilder {
             id: 0,
+            position: Position::default(),
             name: None,
             elevation: 0.0f64,
             initial_level: 0.0f64,
         }
     }
 
-    pub fn set_id(&mut self, id: usize) -> &mut Self {
+    pub fn set_id(mut self, id: usize) -> Self {
         self.id = id;
         self
     }
 
-    pub fn set_name(&mut self, name: &str) -> &mut Self {
+    pub fn set_position(mut self, pos: Position) -> Self {
+        self.position = pos;
+        self
+    }
+
+    pub fn set_name(mut self, name: &str) -> Self {
         self.name = Some(name.to_string());
         self
     }
 
-    pub fn set_elevation(&mut self, elevation: f64) -> &mut Self {
+    pub fn set_elevation(mut self, elevation: f64) -> Self {
         self.elevation = elevation;
         self
     }
 
-    pub fn set_initial_level(&mut self, initial_level: f64) -> &mut Self {
+    pub fn set_initial_level(mut self, initial_level: f64) -> Self {
         self.initial_level = initial_level;
         self
     }
 
-    pub fn build(&self) -> Tank {
+    pub fn build(self) -> Tank {
         Tank {
             id: self.id,
-            name: self.name.clone(),
+            position: self.position,
+            name: self.name,
             elevation: self.elevation,
             initial_level: self.initial_level,
         }
