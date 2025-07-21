@@ -85,6 +85,7 @@ impl Network {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct NetworkBuilder {
     pub title: Option<String>,
     pub junctions: Option<Vec<Junction>>,
@@ -112,86 +113,56 @@ impl NetworkBuilder {
         wdnb
     }
 
-    pub fn set_title(&mut self, title: &str) -> &mut Self {
-        self.title = Some(title.to_string());
+    pub fn set_title(mut self, title: Option<String>) -> Self {
+        self.title = title;
         self
     }
 
-    pub fn set_junctions(&mut self, junctions: Vec<Junction>) -> &mut Self {
-        self.junctions = Some(junctions);
+    pub fn set_junctions(mut self, junctions: Option<Vec<Junction>>) -> Self {
+        self.junctions = junctions;
         self
     }
 
-    pub fn set_tanks(&mut self, tanks: Vec<Tank>) -> &mut Self {
-        self.tanks = Some(tanks);
+    pub fn set_tanks(mut self, tanks: Option<Vec<Tank>>) -> Self {
+        self.tanks = tanks;
         self
     }
 
-    pub fn set_reservoir(&mut self, reservoirs: Vec<Reservoir>) -> &mut Self {
-        self.reservoirs = Some(reservoirs);
+    pub fn set_reservoir(mut self, reservoirs: Option<Vec<Reservoir>>) -> Self {
+        self.reservoirs = reservoirs;
         self
     }
 
-    pub fn set_pipes(&mut self, pipes: Vec<Pipe>) -> &mut Self {
-        self.pipes = Some(pipes);
+    pub fn set_pipes(mut self, pipes: Option<Vec<Pipe>>) -> Self {
+        self.pipes = pipes;
         self
     }
 
-    pub fn set_pumps(&mut self, pumps: Vec<Pump>) -> &mut Self {
-        self.pumps = Some(pumps);
+    pub fn set_pumps(mut self, pumps: Option<Vec<Pump>>) -> Self {
+        self.pumps = pumps;
         self
     }
 
-    pub fn set_valves(&mut self, valves: Vec<Valve>) -> &mut Self {
-        self.valves = Some(valves);
+    pub fn set_valves(mut self, valves: Option<Vec<Valve>>) -> Self {
+        self.valves = valves;
         self
     }
 
-    pub fn set_options(&mut self, options: Options) -> &mut Self {
-        self.options = Some(options);
+    pub fn set_options(mut self, options: Option<Options>) -> Self {
+        self.options = options;
         self
     }
 
-    pub fn build(&self) -> Network {
-        // let nn : usize = match self.junctions {
-        //     Some(junctions) => junctions.len(),
-        //     None => 0,
-        // };
-
-        // let nt = match self.tanks{
-        //     Some(tanks) => tanks.len(),
-        //     None => 0,
-        // };
-
-        // let nr = match self.reservoirs{
-        //     Some(reservoirs) => reservoirs.len(),
-        //     None => 0,
-        // };
-
-        // let npip = match self.pipes{
-        //     Some(pipes) => pipes.len(),
-        //     None =>0,
-        // };
-
-        // let npmp = match self.pumps {
-        //     Some(pumps) => pumps.len(),
-        //     None => 0,
-        // };
-
-        // let nvlv = match self.valves {
-        //     Some(valves) => valves.len(),
-        //     None => 0,
-        // };
-
+    pub fn build(self) -> Network {
         Network {
-            title: self.title.clone(),
-            junctions: self.junctions.clone(),
-            tanks: self.tanks.clone(),
-            reservoirs: self.reservoirs.clone(),
-            pipes: self.pipes.clone(),
-            pumps: self.pumps.clone(),
-            valves: self.valves.clone(),
-            options: self.options.clone(),
+            title: self.title,
+            junctions: self.junctions,
+            tanks: self.tanks,
+            reservoirs: self.reservoirs,
+            pipes: self.pipes,
+            pumps: self.pumps,
+            valves: self.valves,
+            options: self.options,
         }
     }
 }

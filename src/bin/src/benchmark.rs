@@ -79,10 +79,10 @@ pub mod benchmark {
         let ps = vec![p1, p2, p3];
 
         let net3: Network = NetworkBuilder::new()
-            .set_title("Network3")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
+            .set_title(Some("Network3".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
             .build();
 
         net3
@@ -181,11 +181,11 @@ pub mod benchmark {
         let pms = vec![pmp1];
 
         let net4: Network = NetworkBuilder::new()
-            .set_title("Network4")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
-            .set_pumps(pms)
+            .set_title(Some("Network4".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
+            .set_pumps(Some(pms))
             .build();
         net4
     }
@@ -289,10 +289,10 @@ pub mod benchmark {
         let ps = vec![p1, p2, p3, p4];
 
         let net: Network = NetworkBuilder::new()
-            .set_title("Network Todini 1")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
+            .set_title(Some("Network Todini 1".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
             .build();
 
         net
@@ -385,11 +385,11 @@ pub mod benchmark {
         let ps = vec![p1, p2, p3, p4, p5, p6];
 
         let net2: Network = NetworkBuilder::new()
-            .set_title("Network Todini 2")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
-            .set_options(options)
+            .set_title(Some("Network Todini 2".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
+            .set_options(Some(options))
             .build();
         net2
     }
@@ -521,11 +521,11 @@ pub mod benchmark {
         let ps = vec![p1, p2, p3, p4, p5, p6, p7, p8];
 
         let netw: Network = NetworkBuilder::new()
-            .set_title("Network Two-loop")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
-            .set_options(options)
+            .set_title(Some("Network Two-loop".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
+            .set_options(Some(options))
             .build();
         netw
     }
@@ -642,11 +642,11 @@ pub mod benchmark {
         let ps = vec![p1, p2, p3, p4, p5, p6, p7];
 
         let netw: Network = NetworkBuilder::new()
-            .set_title("Network Two-loop")
-            .set_junctions(js)
-            .set_tanks(ts)
-            .set_pipes(ps)
-            .set_options(options)
+            .set_title(Some("Network Two-loop".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
+            .set_options(Some(options))
             .build();
         netw
     }
