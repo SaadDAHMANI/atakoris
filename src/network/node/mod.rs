@@ -21,8 +21,8 @@ pub trait Node {
 
     fn node_type(&self) -> NodeType;
 
-    fn get_position(&self) -> Position {
-        Position::new(0.0, 0.0)
+    fn get_position(&self) -> (f32, f32) {
+        (0.0f32, 0.0f32)
     }
 
     fn get_head(&self) -> Option<f64> {

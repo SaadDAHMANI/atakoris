@@ -46,8 +46,8 @@ impl Node for Junction {
         self.id
     }
 
-    fn get_position(&self) -> Position {
-        self.position.clone()
+    fn get_position(&self) -> (f32, f32) {
+        (self.position.x, self.position.y)
     }
 
     fn node_type(&self) -> NodeType {

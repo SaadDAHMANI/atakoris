@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::Position;
+
 pub mod pipe;
 pub mod pump;
 pub mod valve;
@@ -29,6 +31,11 @@ pub enum ValveType {
 
 pub trait Link {
     fn link_type(&self) -> LinkType;
+    fn get_id(&self) -> usize;
+    fn get_vertices(&self) -> Option<&Vec<Position>>;
+    fn get_start_node(&self) -> usize;
+    fn get_end_node(&self) -> usize;
+
     //fn resistance(&self)->f64;
     fn to_string(&self) -> String;
     fn print(&self) {

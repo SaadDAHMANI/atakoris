@@ -41,6 +41,22 @@ impl Pump {
 }
 
 impl Link for Pump {
+    fn get_id(&self) -> usize {
+        self.id
+    }
+
+    fn get_start_node(&self) -> usize {
+        self.start
+    }
+
+    fn get_end_node(&self) -> usize {
+        self.end
+    }
+
+    fn get_vertices(&self) -> Option<&Vec<Position>> {
+        None
+    }
+
     fn link_type(&self) -> LinkType {
         LinkType::Pump
     }
