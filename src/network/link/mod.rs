@@ -35,6 +35,13 @@ pub trait Link {
     fn get_vertices(&self) -> Option<&Vec<Position>>;
     fn get_start_node(&self) -> usize;
     fn get_end_node(&self) -> usize;
+    fn get_diameter(&self) -> f64 {
+        100.0f64
+    }
+
+    fn get_length(&self) -> f64 {
+        0.0001f64
+    }
 
     //fn resistance(&self)->f64;
     fn to_string(&self) -> String;

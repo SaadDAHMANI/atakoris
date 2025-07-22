@@ -121,6 +121,14 @@ impl Link for Pipe {
         }
     }
 
+    fn get_diameter(&self) -> f64 {
+        self.diameter
+    }
+
+    fn get_length(&self) -> f64 {
+        self.length
+    }
+
     fn link_type(&self) -> LinkType {
         LinkType::Pipe
     }
