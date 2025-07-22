@@ -37,11 +37,12 @@ impl<'a> InpFileParser<'a> {
                 let mut junctions = self.get_junctions(&lines);
                 let mut tanks = self.get_tanks(&lines);
                 let mut reservoirs = self.get_reservoirs(&lines);
-                let pipes = self.get_pipes(&lines);
+                let mut pipes = self.get_pipes(&lines);
                 let pumps = self.get_pumps(&lines);
                 let options = self.get_options(&lines);
 
-                let node_positions = self.get_junction_coordinates(&lines);
+                let node_positions = self.get_coordinates(&lines);
+                let link_vertices = self.get_vertices(lines);
 
                 match node_positions {
                     None => (),
@@ -88,12 +89,29 @@ impl<'a> InpFileParser<'a> {
                         };
                     }
                 };
-                /*
-                        match pipes {
-                            None => (),
-                            Some(pps) => {}
-                        };
 
+                match &link_vertices {
+                    None => (),
+                    Some(vertices) => {
+                        match pipes.as_mut() {
+                            None => (),
+                            Some(pipes) => {
+                                for pipe in pipes.iter_mut() {
+                                    // pipe.vertices =
+                                    let vrtxs: Vec<Position> = vertices
+                                        .iter()
+                                        .filter(|v| v.0 == pipe.id)
+                                        .map(|(_i, pos)| pos.clone())
+                                        .collect();
+                                    if vrtxs.len() > 0 {
+                                        pipe.vertices = Some(vrtxs);
+                                    }
+                                }
+                            }
+                        };
+                    }
+                }
+                /*
                         match pumps {
                             None => (),
                             Some(pmps) => {}
@@ -349,62 +367,45 @@ impl<'a> InpFileParser<'a> {
                     }
 
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
-                    let mut builder: PipeBuilder = PipeBuilder::new();
 
                     // get junction id
-                    let val_id = row[0].parse::<usize>();
-                    let id: usize = match val_id {
+                    let id: usize = match row[0].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
-                    builder.set_id(id);
 
                     // get junction elevation
-                    let val_start = row[1].parse::<usize>();
-                    let start: usize = match val_start {
+                    let start_node: usize = match row[1].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
 
-                    builder.set_start(start);
-
-                    let val_end = row[2].parse::<usize>();
-                    let end: usize = match val_end {
+                    let end_node: usize = match row[2].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
-                    builder.set_end(end);
 
-                    let val_length = row[3].parse::<f64>();
-                    let length: f64 = match val_length {
+                    let length: f64 = match row[3].parse::<f64>() {
                         Err(_eror) => 0.0f64,
                         Ok(value) => value,
                     };
-                    builder.set_length(length);
 
-                    let val_diameter = row[4].parse::<f64>();
-                    let diameter: f64 = match val_diameter {
+                    let diameter: f64 = match row[4].parse::<f64>() {
                         Err(_eror) => 0.0f64,
                         Ok(value) => value,
                     };
-                    builder.set_diameter(diameter);
 
-                    let val_roughness = row[5].parse::<f64>();
-                    let roughness: f64 = match val_roughness {
+                    let roughness: f64 = match row[5].parse::<f64>() {
                         Err(_eror) => 0.0f64,
                         Ok(value) => value,
                     };
-                    builder.set_roughness(roughness);
 
-                    let val_minloss = row[6].parse::<f64>();
-                    let minloss: f64 = match val_minloss {
+                    let minloss: f64 = match row[6].parse::<f64>() {
                         Err(_eror) => 0.0f64,
                         Ok(value) => value,
                     };
-                    builder.set_minorloss(minloss);
 
-                    let val_status = row[7].parse::<String>();
-                    let status: LinkStatus = match val_status {
+                    let status: LinkStatus = match row[7].parse::<String>() {
                         Err(_eror) => LinkStatus::Open,
                         Ok(value) => {
                             if value == "Open" {
@@ -414,9 +415,22 @@ impl<'a> InpFileParser<'a> {
                             }
                         }
                     };
-                    builder.set_status(status);
 
-                    pipes.push(builder.build());
+                    let pip = PipeBuilder::new()
+                        .set_id(id)
+                        // .set_name(name)
+                        // .set_vertices(vertices)
+                        .set_start(start_node)
+                        .set_end(end_node)
+                        .set_length(length)
+                        .set_diameter(diameter)
+                        .set_roughness(roughness)
+                        .set_minorloss(minloss)
+                        .set_status(status)
+                        //.set_check_valve(check_valve)
+                        .build();
+
+                    pipes.push(pip);
 
                     //---------------------------------------------
                     index += 1;
@@ -545,7 +559,7 @@ impl<'a> InpFileParser<'a> {
         Some(optns)
     }
 
-    fn get_junction_coordinates(&self, lines: &Vec<String>) -> Option<Vec<(usize, Position)>> {
+    fn get_coordinates(&self, lines: &Vec<String>) -> Option<Vec<(usize, Position)>> {
         let mut index = 0;
         let mut positions: Vec<(usize, Position)> = Vec::new();
 
@@ -584,9 +598,50 @@ impl<'a> InpFileParser<'a> {
             }
             index += 1;
         }
-        //for jn in junctions.iter() {
-        //   println!("* {:?}", jn.to_string());
-        //}
+
+        Some(positions)
+    }
+
+    fn get_vertices(&self, lines: &Vec<String>) -> Option<Vec<(usize, Position)>> {
+        let mut index = 0;
+        let mut positions: Vec<(usize, Position)> = Vec::new();
+
+        for lin in lines.iter() {
+            if lin.trim().eq("[VERTICES]") {
+                index += 2;
+                let mut _continueloop: bool = true;
+                while _continueloop {
+                    if lines[index].trim().eq("") {
+                        _continueloop = false;
+                        break;
+                    }
+
+                    let row: Vec<&str> = lines[index].split_whitespace().collect();
+
+                    // get junction id
+
+                    let id: usize = match row[0].parse::<usize>() {
+                        Err(_eror) => 0,
+                        Ok(value) => value,
+                    };
+
+                    let x: f32 = match row[1].parse::<f32>() {
+                        Err(_eror) => 0.0f32,
+                        Ok(value) => value,
+                    };
+
+                    let y: f32 = match row[2].parse::<f32>() {
+                        Err(_eror) => 0.0f32,
+                        Ok(value) => value,
+                    };
+                    positions.push((id, Position::new(x, y)));
+                    //---------------------------------------------
+                    index += 1;
+                }
+            }
+            index += 1;
+        }
+
         Some(positions)
     }
 }

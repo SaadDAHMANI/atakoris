@@ -1,3 +1,5 @@
+use crate::network::Position;
+
 use super::*;
 use serde::{Deserialize, Serialize};
 // ----------------------- Pipe -----------------------------
@@ -9,6 +11,7 @@ const CHW: f64 = 10.65;
 pub struct Pipe {
     pub id: usize,
     pub name: Option<String>,
+    pub vertices: Option<Vec<Position>>,
     pub start: usize,
     pub end: usize,
 
@@ -89,6 +92,13 @@ impl Pipe {
         };
         v
     }
+
+    pub fn get_vertices(&self) -> Option<&Vec<Position>> {
+        match &self.vertices {
+            None => None,
+            Some(vertices) => Some(&vertices),
+        }
+    }
 }
 
 impl Link for Pipe {
@@ -117,6 +127,7 @@ impl Default for Pipe {
         Pipe {
             id: 0,
             name: None,
+            vertices: None,
             start: 0,
             end: 1,
             length: 100.0,
@@ -135,6 +146,7 @@ impl Default for Pipe {
 pub struct PipeBuilder {
     pub id: usize,
     pub name: Option<String>,
+    pub vertices: Option<Vec<Position>>,
     pub start: usize,
     pub end: usize,
     pub length: f64,
@@ -152,72 +164,66 @@ impl PipeBuilder {
         PipeBuilder::default()
     }
 
-    pub fn set_id(&mut self, id: usize) -> &mut Self {
+    pub fn set_id(mut self, id: usize) -> Self {
         self.id = id;
         self
     }
 
-    pub fn set_name(&mut self, name: &str) -> &mut Self {
+    pub fn set_vertices(mut self, vertices: Option<Vec<Position>>) -> Self {
+        self.vertices = vertices;
+        self
+    }
+
+    pub fn set_name(mut self, name: &str) -> Self {
         self.name = Some(name.into());
         self
     }
 
-    pub fn set_start(&mut self, start_node: usize) -> &mut Self {
+    pub fn set_start(mut self, start_node: usize) -> Self {
         self.start = start_node;
         self
     }
 
-    pub fn set_end(&mut self, end_node: usize) -> &mut Self {
+    pub fn set_end(mut self, end_node: usize) -> Self {
         self.end = end_node;
         self
     }
 
-    pub fn set_length(&mut self, length: f64) -> &mut Self {
-        if length >= 0.0f64 {
-            self.length = length;
-        } else {
-            self.length = 1.0f64;
-        }
+    pub fn set_length(mut self, length: f64) -> Self {
+        self.length = f64::max(1.0, length);
         self
     }
 
-    pub fn set_diameter(&mut self, diameter: f64) -> &mut Self {
-        if diameter >= 0.0f64 {
-            self.diameter = diameter;
-        } else {
-            self.diameter = 100.0f64;
-        }
+    pub fn set_diameter(mut self, diameter: f64) -> Self {
+        self.diameter = f64::max(diameter, 0.001);
         self
     }
 
-    pub fn set_roughness(&mut self, roughness: f64) -> &mut Self {
-        if roughness >= 0.0f64 {
-            self.roughness = roughness;
-        } else {
-            self.roughness = 130.0f64;
-        }
+    pub fn set_roughness(mut self, roughness: f64) -> Self {
+        self.roughness = f64::max(roughness, 0.00001);
         self
     }
 
-    pub fn set_minorloss(&mut self, minloss: f64) -> &mut Self {
+    pub fn set_minorloss(mut self, minloss: f64) -> Self {
         self.minor_loss = f64::max(0.0, minloss);
         self
     }
 
-    pub fn set_status(&mut self, status: LinkStatus) -> &mut Self {
+    pub fn set_status(mut self, status: LinkStatus) -> Self {
         self.status = status;
         self
     }
 
-    pub fn set_check_valve(&mut self, check_valve: bool) -> &mut Self {
+    pub fn set_check_valve(mut self, check_valve: bool) -> Self {
         self.check_valve = check_valve;
         self
     }
 
-    pub fn build(&self) -> Pipe {
+    pub fn build(self) -> Pipe {
         Pipe {
             id: self.id,
-            name: self.name.clone(),
+            name: self.name,
+            vertices: self.vertices,
             start: self.start,
             end: self.end,
             length: self.length,
@@ -236,6 +242,7 @@ impl Default for PipeBuilder {
         PipeBuilder {
             id: 0,
             name: None,
+            vertices: None,
             start: 0,
             end: 0,
             length: 100.0,

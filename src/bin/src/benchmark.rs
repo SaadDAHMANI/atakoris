@@ -122,6 +122,7 @@ pub mod benchmark {
 
         let p1 = Pipe {
             id: 1,
+            vertices: None,
             name: Some(String::from("P1")),
             start: 0,
             end: 1,
@@ -137,6 +138,7 @@ pub mod benchmark {
         let p2 = Pipe {
             id: 2,
             name: Some(String::from("P2")),
+            vertices: None,
             start: 1,
             end: 2,
             length: 100.0,
@@ -151,6 +153,7 @@ pub mod benchmark {
 
         let p3 = Pipe {
             id: 3,
+            vertices: None,
             name: Some(String::from("P3")),
             start: 0,
             end: 2,

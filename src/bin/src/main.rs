@@ -27,7 +27,7 @@ use once_cell::sync::Lazy;
 // make a static network
 static WDN: Lazy<Network> = Lazy::new(|| {
     match Network::read_from_file(
-        "/home/sd/Documents/Rust_apps/atakor/src/bin/data/Hanoi_optimal.inp",
+        "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Hanoi_optimal.inp",
     ) {
         Ok(wdn) => wdn,
         Err(eror) => panic!("Cannot read the file because of : {}", eror),
@@ -42,13 +42,14 @@ fn main() {
     println!("_________________________________________________________________________________");
 
     println!("--------- RUN : {} -----------", RUN);
+    show_static_wdn();
 
-    //test_network3();
-    //test_network1_todini();
-    //test_network2_todini();
-    //test_network4();
-    //test_modena_net();
-    test_2loop_network();
+    // test_network3();
+    // test_network1_todini();
+    // test_network2_todini();
+    // test_network4();
+    // test_modena_net();
+    // test_2loop_network();
 }
 
 #[allow(dead_code)]
@@ -63,7 +64,12 @@ fn show_static_wdn() {
             println!("Pipes = {:?}", pipes.len());
 
             for p in pipes.iter() {
-                println!("{}, C: {}", p.to_string(), p.roughness);
+                println!(
+                    "{}, C: {}, Vertices: {:?}",
+                    p.to_string(),
+                    p.roughness,
+                    p.vertices
+                );
             }
         }
     };
@@ -72,9 +78,9 @@ fn show_static_wdn() {
         None => println!("no junction !!!"),
         Some(nodes) => {
             println!("Junctions = {:?}", nodes.len());
-            for j in nodes.iter() {
-                println!("{}", j.to_string());
-            }
+            nodes
+                .iter()
+                .for_each(|jn| println!("id: {}, pos: {:?}", jn.id, jn.position));
         }
     };
 
