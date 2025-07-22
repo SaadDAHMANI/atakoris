@@ -12,6 +12,10 @@ pub mod ffi_dto;
 // pub mod ffi; //This FFI mode use potential unsafe code!
 // --------------------------------------
 
+pub use network::*;
+pub use parsers::inpfileparser::InpFileParser;
+pub use solver::Solver;
+
 #[cfg(test)]
 mod tests {
     //use super::*;
