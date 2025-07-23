@@ -98,55 +98,55 @@ impl PumpBuilder {
         PumpBuilder::default()
     }
 
-    pub fn set_id(&mut self, id: usize) -> &mut Self {
+    pub fn set_id(mut self, id: usize) -> Self {
         self.id = id;
         self
     }
 
-    pub fn set_name(&mut self, name: String) -> &mut Self {
+    pub fn set_name(mut self, name: String) -> Self {
         self.name = Some(name);
         self
     }
 
-    pub fn set_start(&mut self, start_node: usize) -> &mut Self {
+    pub fn set_start(mut self, start_node: usize) -> Self {
         self.start = start_node;
         self
     }
 
-    pub fn set_end(&mut self, end_node: usize) -> &mut Self {
+    pub fn set_end(mut self, end_node: usize) -> Self {
         self.end = end_node;
         self
     }
 
-    pub fn set_alpha(&mut self, alpha: f64) -> &mut Self {
+    pub fn set_alpha(mut self, alpha: f64) -> Self {
         self.alpha = alpha;
         self
     }
 
-    pub fn set_beta(&mut self, beta: f64) -> &mut Self {
+    pub fn set_beta(mut self, beta: f64) -> Self {
         self.beta = beta;
         self
     }
 
-    pub fn set_gamma(&mut self, gamma: f64) -> &mut Self {
+    pub fn set_gamma(mut self, gamma: f64) -> Self {
         self.gamma = gamma;
         self
     }
 
-    pub fn set_status(&mut self, status: LinkStatus) -> &mut Self {
+    pub fn set_status(mut self, status: LinkStatus) -> Self {
         self.status = status;
         self
     }
 
-    pub fn set_parameters(&mut self, parameters: Option<String>) -> &mut Self {
+    pub fn set_parameters(mut self, parameters: Option<String>) -> Self {
         self.parameters = parameters;
         self
     }
 
-    pub fn build(&self) -> Pump {
+    pub fn build(self) -> Pump {
         Pump {
             id: self.id,
-            name: self.name.clone(),
+            name: self.name,
             start: self.start,
             end: self.end,
             alpha: self.alpha,
@@ -154,7 +154,7 @@ impl PumpBuilder {
             gamma: self.gamma,
             flow: None,
             status: self.status,
-            parameters: self.parameters.clone(),
+            parameters: self.parameters,
         }
     }
 }

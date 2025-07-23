@@ -416,22 +416,23 @@ impl<'a> InpFileParser<'a> {
                         }
                     };
 
-                    let pip = PipeBuilder::new()
-                        .set_id(id)
-                        // .set_name(name)
-                        // .set_vertices(vertices)
-                        .set_start(start_node)
-                        .set_end(end_node)
-                        .set_length(length)
-                        .set_diameter(diameter)
-                        .set_roughness(roughness)
-                        .set_minorloss(minloss)
-                        .set_status(status)
-                        //.set_check_valve(check_valve)
-                        .build();
+                    if start_node != end_node {
+                        let pip = PipeBuilder::new()
+                            .set_id(id)
+                            // .set_name(name)
+                            // .set_vertices(vertices)
+                            .set_start(start_node)
+                            .set_end(end_node)
+                            .set_length(length)
+                            .set_diameter(diameter)
+                            .set_roughness(roughness)
+                            .set_minorloss(minloss)
+                            .set_status(status)
+                            //.set_check_valve(check_valve)
+                            .build();
 
-                    pipes.push(pip);
-
+                        pipes.push(pip);
+                    }
                     //---------------------------------------------
                     index += 1;
                 }
@@ -456,38 +457,37 @@ impl<'a> InpFileParser<'a> {
                     }
 
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
-                    let mut builder: PumpBuilder = PumpBuilder::new();
 
-                    let val_id = row[0].parse::<usize>();
-                    let id: usize = match val_id {
+                    let id: usize = match row[0].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
-                    builder.set_id(id);
 
-                    let val_startnode = row[1].parse::<usize>();
-                    let startnode: usize = match val_startnode {
+                    let start_node: usize = match row[1].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
-                    builder.set_start(startnode);
 
-                    let val_endnode = row[2].parse::<usize>();
-                    let endnode: usize = match val_endnode {
+                    let end_node: usize = match row[2].parse::<usize>() {
                         Err(_eror) => 0,
                         Ok(value) => value,
                     };
-                    builder.set_end(endnode);
 
-                    let val_parameters = row[3].parse::<String>();
-                    let parameters: Option<String> = match val_parameters {
+                    let parameters: Option<String> = match row[3].parse::<String>() {
                         Err(_eror) => None,
                         Ok(value) => Some(value),
                     };
-                    builder.set_parameters(parameters);
 
-                    pumps.push(builder.build());
+                    if start_node != end_node {
+                        let pmp = PumpBuilder::new()
+                            .set_id(id)
+                            .set_start(start_node)
+                            .set_end(end_node)
+                            .set_parameters(parameters)
+                            .build();
 
+                        pumps.push(pmp);
+                    }
                     //---------------------------------------------
                     index += 1;
                 }
