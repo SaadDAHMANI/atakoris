@@ -379,20 +379,26 @@ impl<'a> InpFileParser<'a> {
                             Ok(value) => value,
                         };
 
-                        let minloss: f64 = match row[6].parse::<f64>() {
-                            Err(_eror) => 0.0f64,
-                            Ok(value) => value,
-                        };
+                        let mut min_loss: f64 = 0.0;
+                        let mut status: LinkStatus = LinkStatus::Open;
 
-                        let status: LinkStatus = match row[7].parse::<String>() {
-                            Err(_eror) => LinkStatus::Open,
-                            Ok(value) => {
-                                if value == "Open" {
-                                    LinkStatus::Open
-                                } else {
-                                    LinkStatus::Closed
-                                }
-                            }
+                        if row.len() > 6 {
+                            min_loss = match row[6].parse::<f64>() {
+                                Err(_eror) => 0.0f64,
+                                Ok(value) => value,
+                            };
+                            if row.len() > 7 {
+                                status = match row[7].parse::<String>() {
+                                    Err(_eror) => LinkStatus::Open,
+                                    Ok(value) => {
+                                        if value == "Open" {
+                                            LinkStatus::Open
+                                        } else {
+                                            LinkStatus::Closed
+                                        }
+                                    }
+                                };
+                            };
                         };
 
                         if start_node != end_node {
@@ -405,7 +411,7 @@ impl<'a> InpFileParser<'a> {
                                 .set_length(length)
                                 .set_diameter(diameter)
                                 .set_roughness(roughness)
-                                .set_minorloss(minloss)
+                                .set_minorloss(min_loss)
                                 .set_status(status)
                                 //.set_check_valve(check_valve)
                                 .build();
