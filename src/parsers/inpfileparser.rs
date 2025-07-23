@@ -31,9 +31,11 @@ impl<'a> InpFileParser<'a> {
                 std::io::ErrorKind::Other,
                 format!("Error when reading the file : {}", self.file_path),
             )),
-
             Some(lines) => {
+                // println!("lines: {}", lines.len());
+
                 let title = self.get_title(&lines);
+                //  println!("title : {:?}", title);
                 let mut junctions = self.get_junctions(&lines);
                 let mut tanks = self.get_tanks(&lines);
                 let mut reservoirs = self.get_reservoirs(&lines);
@@ -169,18 +171,18 @@ impl<'a> InpFileParser<'a> {
         for lin in lines.iter() {
             if lin.trim().eq("[TITLE]") {
                 index += 1;
-
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[JUNCTIONS]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
+                    } else {
+                        title = lin.clone();
+                        break;
                     }
-
-                    title += lin;
-                    index += 1;
                 }
             }
+            index += 1;
         }
         if title.trim().eq("") {
             None
@@ -198,7 +200,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[RESERVOIRS]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -248,7 +250,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[TANKS]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -289,7 +291,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[PIPES]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -304,20 +306,21 @@ impl<'a> InpFileParser<'a> {
                             Ok(value) => value,
                         };
 
-                        // tbuilder.set_elevation(elev);
+                        let mut initial_level: f64 = 0.0;
 
-                        // get junction elevation
-                        let init_level: f64 = match row[2].parse::<f64>() {
-                            Err(_eror) => 0.0f64,
-                            Ok(value) => value,
+                        if row.len() > 2 {
+                            initial_level = match row[2].parse::<f64>() {
+                                Err(_eror) => 0.0f64,
+                                Ok(value) => value,
+                            };
                         };
 
-                        // tbuilder.set_initial_level(init_level);
                         let tank: Tank = TankBuilder::new()
                             .set_id(id)
                             .set_elevation(elev)
-                            .set_initial_level(init_level)
+                            .set_initial_level(initial_level)
                             .build();
+
                         tanks.push(tank);
                     };
                     //---------------------------------------------
@@ -341,7 +344,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[PUMPS]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -428,7 +431,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[VALVES]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -484,7 +487,7 @@ impl<'a> InpFileParser<'a> {
                 index += 1;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[COORDINATES]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -542,7 +545,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[VERTICES]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
@@ -582,7 +585,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") || lines[index].trim().eq("[LABELS]") {
+                    if lines[index].trim().eq("") {
                         _continueloop = false;
                         break;
                     }
