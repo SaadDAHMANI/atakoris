@@ -164,7 +164,7 @@ impl<'a> InpFileParser<'a> {
 
     fn get_title(&self, lines: &Vec<String>) -> Option<String> {
         let mut index = 0;
-        let mut title: Option<String> = None;
+        let mut title: String = String::new();
 
         for lin in lines.iter() {
             if lin.trim().eq("[TITLE]") {
@@ -172,17 +172,21 @@ impl<'a> InpFileParser<'a> {
 
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[JUNCTIONS]") {
                         _continueloop = false;
                         break;
                     }
 
-                    title = Some(lin.clone());
+                    title += lin;
                     index += 1;
                 }
             }
         }
-        title
+        if title.trim().eq("") {
+            None
+        } else {
+            Some(title)
+        }
     }
 
     fn get_junctions(&self, lines: &Vec<String>) -> Option<Vec<Junction>> {
@@ -194,7 +198,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[RESERVOIRS]") {
                         _continueloop = false;
                         break;
                     }
@@ -202,24 +206,19 @@ impl<'a> InpFileParser<'a> {
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
                     // get junction id
 
-                    let id: Option<usize> = match row[0].parse::<usize>() {
-                        Err(_eror) => None,
-                        Ok(value) => Some(value),
-                    };
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        // get junction elevation
+                        let elev: f64 = match row[1].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let elev: f64 = match row[1].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
+                        // get junction elevation
+                        let demand: f64 = match row[2].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let demand: f64 = match row[2].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
-
-                    if let Some(id) = id {
                         let jn: Junction = JunctionBuilder::new()
                             .set_id(id)
                             .set_elevation(elev)
@@ -227,7 +226,7 @@ impl<'a> InpFileParser<'a> {
                             .build();
 
                         junctions.push(jn);
-                    }
+                    };
                     //---------------------------------------------
                     index += 1;
                 }
@@ -249,7 +248,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[TANKS]") {
                         _continueloop = false;
                         break;
                     }
@@ -257,21 +256,14 @@ impl<'a> InpFileParser<'a> {
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
 
                     // get junction id
-                    let id: Option<usize> = match row[0].parse::<usize>() {
-                        Err(_eror) => None,
-                        Ok(value) => Some(value),
-                    };
-                    //rbuilder.set_id(id);
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        // get junction elevation
+                        let elev: f64 = match row[1].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let val_elev = row[1].parse::<f64>();
-                    let elev: f64 = match val_elev {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
-
-                    // rbuilder.set_head(elev);
-                    if let Some(id) = id {
+                        // rbuilder.set_head(elev);
                         let resrvr: Reservoir =
                             ReservoirBuilder::new().set_id(id).set_head(elev).build();
                         reservoirs.push(resrvr);
@@ -297,7 +289,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[PIPES]") {
                         _continueloop = false;
                         break;
                     }
@@ -305,28 +297,22 @@ impl<'a> InpFileParser<'a> {
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
 
                     // get junction id
-                    let id: Option<usize> = match row[0].parse::<usize>() {
-                        Err(_eror) => None,
-                        Ok(value) => Some(value),
-                    };
-                    // tbuilder.set_id(id);
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        // get junction elevation
+                        let elev: f64 = match row[1].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let elev: f64 = match row[1].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
+                        // tbuilder.set_elevation(elev);
 
-                    // tbuilder.set_elevation(elev);
+                        // get junction elevation
+                        let init_level: f64 = match row[2].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let init_level: f64 = match row[2].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
-
-                    // tbuilder.set_initial_level(init_level);
-                    if let Some(id) = id {
+                        // tbuilder.set_initial_level(init_level);
                         let tank: Tank = TankBuilder::new()
                             .set_id(id)
                             .set_elevation(elev)
@@ -355,7 +341,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[PUMPS]") {
                         _continueloop = false;
                         break;
                     }
@@ -363,69 +349,66 @@ impl<'a> InpFileParser<'a> {
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
 
                     // get junction id
-                    let id: usize = match row[0].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        // get junction elevation
+                        let start_node: usize = match row[1].parse::<usize>() {
+                            Err(_eror) => 0,
+                            Ok(value) => value,
+                        };
 
-                    // get junction elevation
-                    let start_node: usize = match row[1].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
+                        let end_node: usize = match row[2].parse::<usize>() {
+                            Err(_eror) => 0,
+                            Ok(value) => value,
+                        };
 
-                    let end_node: usize = match row[2].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
+                        let length: f64 = match row[3].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    let length: f64 = match row[3].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
+                        let diameter: f64 = match row[4].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    let diameter: f64 = match row[4].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
+                        let roughness: f64 = match row[5].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    let roughness: f64 = match row[5].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
+                        let minloss: f64 = match row[6].parse::<f64>() {
+                            Err(_eror) => 0.0f64,
+                            Ok(value) => value,
+                        };
 
-                    let minloss: f64 = match row[6].parse::<f64>() {
-                        Err(_eror) => 0.0f64,
-                        Ok(value) => value,
-                    };
-
-                    let status: LinkStatus = match row[7].parse::<String>() {
-                        Err(_eror) => LinkStatus::Open,
-                        Ok(value) => {
-                            if value == "Open" {
-                                LinkStatus::Open
-                            } else {
-                                LinkStatus::Closed
+                        let status: LinkStatus = match row[7].parse::<String>() {
+                            Err(_eror) => LinkStatus::Open,
+                            Ok(value) => {
+                                if value == "Open" {
+                                    LinkStatus::Open
+                                } else {
+                                    LinkStatus::Closed
+                                }
                             }
+                        };
+
+                        if start_node != end_node {
+                            let pip = PipeBuilder::new()
+                                .set_id(id)
+                                // .set_name(name)
+                                // .set_vertices(vertices)
+                                .set_start(start_node)
+                                .set_end(end_node)
+                                .set_length(length)
+                                .set_diameter(diameter)
+                                .set_roughness(roughness)
+                                .set_minorloss(minloss)
+                                .set_status(status)
+                                //.set_check_valve(check_valve)
+                                .build();
+
+                            pipes.push(pip);
                         }
-                    };
-
-                    if start_node != end_node {
-                        let pip = PipeBuilder::new()
-                            .set_id(id)
-                            // .set_name(name)
-                            // .set_vertices(vertices)
-                            .set_start(start_node)
-                            .set_end(end_node)
-                            .set_length(length)
-                            .set_diameter(diameter)
-                            .set_roughness(roughness)
-                            .set_minorloss(minloss)
-                            .set_status(status)
-                            //.set_check_valve(check_valve)
-                            .build();
-
-                        pipes.push(pip);
                     }
                     //---------------------------------------------
                     index += 1;
@@ -445,43 +428,40 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[VALVES]") {
                         _continueloop = false;
                         break;
                     }
 
                     let row: Vec<&str> = lines[index].split_whitespace().collect();
 
-                    let id: usize = match row[0].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        let start_node: usize = match row[1].parse::<usize>() {
+                            Err(_eror) => 0,
+                            Ok(value) => value,
+                        };
+
+                        let end_node: usize = match row[2].parse::<usize>() {
+                            Err(_eror) => 0,
+                            Ok(value) => value,
+                        };
+
+                        let parameters: Option<String> = match row[3].parse::<String>() {
+                            Err(_eror) => None,
+                            Ok(value) => Some(value),
+                        };
+
+                        if start_node != end_node {
+                            let pmp = PumpBuilder::new()
+                                .set_id(id)
+                                .set_start(start_node)
+                                .set_end(end_node)
+                                .set_parameters(parameters)
+                                .build();
+
+                            pumps.push(pmp);
+                        };
                     };
-
-                    let start_node: usize = match row[1].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
-
-                    let end_node: usize = match row[2].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
-
-                    let parameters: Option<String> = match row[3].parse::<String>() {
-                        Err(_eror) => None,
-                        Ok(value) => Some(value),
-                    };
-
-                    if start_node != end_node {
-                        let pmp = PumpBuilder::new()
-                            .set_id(id)
-                            .set_start(start_node)
-                            .set_end(end_node)
-                            .set_parameters(parameters)
-                            .build();
-
-                        pumps.push(pmp);
-                    }
                     //---------------------------------------------
                     index += 1;
                 }
@@ -504,7 +484,7 @@ impl<'a> InpFileParser<'a> {
                 index += 1;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[COORDINATES]") {
                         _continueloop = false;
                         break;
                     }
@@ -562,7 +542,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[VERTICES]") {
                         _continueloop = false;
                         break;
                     }
@@ -571,21 +551,18 @@ impl<'a> InpFileParser<'a> {
 
                     // get junction id
 
-                    let id: usize = match row[0].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        let x: f32 = match row[1].parse::<f32>() {
+                            Err(_eror) => 0.0f32,
+                            Ok(value) => value,
+                        };
 
-                    let x: f32 = match row[1].parse::<f32>() {
-                        Err(_eror) => 0.0f32,
-                        Ok(value) => value,
+                        let y: f32 = match row[2].parse::<f32>() {
+                            Err(_eror) => 0.0f32,
+                            Ok(value) => value,
+                        };
+                        positions.push((id, Position::new(x, y)));
                     };
-
-                    let y: f32 = match row[2].parse::<f32>() {
-                        Err(_eror) => 0.0f32,
-                        Ok(value) => value,
-                    };
-                    positions.push((id, Position::new(x, y)));
                     //---------------------------------------------
                     index += 1;
                 }
@@ -605,7 +582,7 @@ impl<'a> InpFileParser<'a> {
                 index += 2;
                 let mut _continueloop: bool = true;
                 while _continueloop {
-                    if lines[index].trim().eq("") {
+                    if lines[index].trim().eq("") || lines[index].trim().eq("[LABELS]") {
                         _continueloop = false;
                         break;
                     }
@@ -614,21 +591,18 @@ impl<'a> InpFileParser<'a> {
 
                     // get junction id
 
-                    let id: usize = match row[0].parse::<usize>() {
-                        Err(_eror) => 0,
-                        Ok(value) => value,
-                    };
+                    if let Ok(id) = row[0].parse::<usize>() {
+                        let x: f32 = match row[1].parse::<f32>() {
+                            Err(_eror) => 0.0f32,
+                            Ok(value) => value,
+                        };
 
-                    let x: f32 = match row[1].parse::<f32>() {
-                        Err(_eror) => 0.0f32,
-                        Ok(value) => value,
+                        let y: f32 = match row[2].parse::<f32>() {
+                            Err(_eror) => 0.0f32,
+                            Ok(value) => value,
+                        };
+                        positions.push((id, Position::new(x, y)));
                     };
-
-                    let y: f32 = match row[2].parse::<f32>() {
-                        Err(_eror) => 0.0f32,
-                        Ok(value) => value,
-                    };
-                    positions.push((id, Position::new(x, y)));
                     //---------------------------------------------
                     index += 1;
                 }
