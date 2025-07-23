@@ -16,8 +16,8 @@ pub struct Junction {
 }
 
 impl Junction {
-    pub fn new(id: usize, elevation: f64, demand: f64) -> JunctionBuilder {
-        JunctionBuilder {
+    pub fn new(id: usize, elevation: f64, demand: f64) -> Self {
+        Self {
             id,
             position: Position::default(),
             elevation,
@@ -27,6 +27,7 @@ impl Junction {
             pattern: None,
             #[cfg(feature = "optimization")]
             target_head: None,
+            pressure: None,
         }
     }
 
@@ -77,7 +78,7 @@ impl Node for Junction {
 
 impl Default for Junction {
     fn default() -> Self {
-        Junction::new(0, 0.0f64, 0.0f64).build()
+        Self::new(0, 0.0f64, 0.0f64)
     }
 }
 
