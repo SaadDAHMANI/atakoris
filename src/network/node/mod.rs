@@ -7,7 +7,7 @@ use super::Position;
 
 //use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum NodeType {
     Junction,
     Reservoir,
@@ -17,6 +17,8 @@ pub enum NodeType {
 //------------------------------------Node-------------------------------
 
 pub trait Node {
+    fn default_with(id: usize, pos: Position) -> Self;
+
     fn get_id(&self) -> usize;
 
     fn node_type(&self) -> NodeType;

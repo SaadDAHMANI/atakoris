@@ -31,6 +31,10 @@ impl Junction {
         }
     }
 
+    pub fn set_name(&mut self, name: Option<String>) {
+        self.name = name;
+    }
+
     #[cfg(feature = "optimization")]
     pub fn set_target_head(&mut self, required_head: f64) {
         self.target_head = Some(required_head);
@@ -47,6 +51,12 @@ impl Node for Junction {
         self.id
     }
 
+    fn default_with(id: usize, pos: Position) -> Self {
+        let mut nd = Junction::default();
+        nd.id = id;
+        nd.position = pos;
+        nd
+    }
     fn get_position(&self) -> (f32, f32) {
         (self.position.x, self.position.y)
     }

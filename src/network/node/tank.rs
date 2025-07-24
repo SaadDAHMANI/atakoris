@@ -18,8 +18,8 @@ pub struct Tank {
 }
 
 impl Tank {
-    pub fn new(id: usize, elevation: f64, initial_level: f64) -> TankBuilder {
-        TankBuilder {
+    pub fn new(id: usize, elevation: f64, initial_level: f64) -> Self {
+        Self {
             id,
             position: Position::default(),
             elevation,
@@ -38,6 +38,12 @@ impl Node for Tank {
         self.id
     }
 
+    fn default_with(id: usize, pos: Position) -> Self {
+        let mut nd = Tank::default();
+        nd.id = id;
+        nd.position = pos;
+        nd
+    }
     fn get_position(&self) -> (f32, f32) {
         (self.position.x, self.position.y)
     }
@@ -59,7 +65,7 @@ impl Node for Tank {
 
 impl Default for Tank {
     fn default() -> Self {
-        Tank::new(0usize, 100.0f64, 2.0f64).build()
+        Tank::new(0usize, 100.0f64, 2.0f64)
     }
 }
 

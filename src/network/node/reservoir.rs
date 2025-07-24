@@ -15,6 +15,12 @@ impl Node for Reservoir {
         self.id
     }
 
+    fn default_with(id: usize, pos: Position) -> Self {
+        let mut nd = Reservoir::default();
+        nd.id = id;
+        nd.position = pos;
+        nd
+    }
     fn get_position(&self) -> (f32, f32) {
         (self.position.x, self.position.y)
     }
@@ -31,6 +37,18 @@ impl Node for Reservoir {
             self.head,
             self.pattern
         )
+    }
+}
+
+impl Default for Reservoir {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            position: Position::default(),
+            name: None,
+            head: 0.0,
+            pattern: None,
+        }
     }
 }
 
