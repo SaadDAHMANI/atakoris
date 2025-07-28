@@ -128,7 +128,7 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn set_reservoir(mut self, reservoirs: Option<Vec<Reservoir>>) -> Self {
+    pub fn set_reservoirs(mut self, reservoirs: Option<Vec<Reservoir>>) -> Self {
         self.reservoirs = reservoirs;
         self
     }

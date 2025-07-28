@@ -128,7 +128,7 @@ impl<'a> InpFileParser<'a> {
                 let wdn = NetworkBuilder::new()
                     .set_title(title)
                     .set_junctions(junctions)
-                    .set_reservoir(reservoirs)
+                    .set_reservoirs(reservoirs)
                     .set_tanks(tanks)
                     .set_pipes(pipes)
                     .set_pumps(pumps)

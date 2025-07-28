@@ -61,6 +61,19 @@ impl Link for Pump {
         LinkType::Pump
     }
 
+    fn default_with(
+        id: usize,
+        start_node: usize,
+        end_node: usize,
+        _vertices: Option<Vec<Position>>,
+    ) -> Self {
+        PumpBuilder::new()
+            .set_id(id)
+            .set_start(start_node)
+            .set_end(end_node)
+            .build()
+    }
+
     fn to_string(&self) -> String {
         format!(
             "id: {}, name: {:?}, category: {:?} , {}--->{}, alpha: {}, beta: {}, gamma: {}, Q: {:?}, H: {:?}",

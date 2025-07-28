@@ -132,7 +132,19 @@ impl Link for Pipe {
     fn link_type(&self) -> LinkType {
         LinkType::Pipe
     }
-
+    fn default_with(
+        id: usize,
+        start_node: usize,
+        end_node: usize,
+        vertices: Option<Vec<Position>>,
+    ) -> Self {
+        PipeBuilder::new()
+            .set_id(id)
+            .set_start(start_node)
+            .set_end(end_node)
+            .set_vertices(vertices)
+            .build()
+    }
     fn to_string(&self) -> String {
         format!(
             "id: {}, name: {:?}, category: {:?} , {}--->{} : diametre: {}, length: {}, R: {}, flow: {:?}",

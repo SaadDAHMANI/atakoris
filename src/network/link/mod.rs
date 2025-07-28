@@ -30,6 +30,12 @@ pub enum ValveType {
 }
 
 pub trait Link {
+    fn default_with(
+        id: usize,
+        start_node: usize,
+        end_node: usize,
+        vertices: Option<Vec<Position>>,
+    ) -> Self;
     fn link_type(&self) -> LinkType;
     fn get_id(&self) -> usize;
     fn get_vertices(&self) -> Option<&Vec<Position>>;
