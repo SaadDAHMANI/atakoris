@@ -5,13 +5,13 @@ pub mod link;
 pub mod node;
 pub mod position;
 
-use node::junction::Junction;
-use node::reservoir::Reservoir;
-use node::tank::Tank;
+pub use node::junction::{Junction, JunctionBuilder};
+pub use node::reservoir::{Reservoir, ReservoirBuilder};
+pub use node::tank::{Tank, TankBuilder};
 
-use link::pipe::Pipe;
-use link::pump::Pump;
-use link::valve::Valve;
+pub use link::pipe::Pipe;
+pub use link::pump::Pump;
+pub use link::valve::Valve;
 
 pub use position::Position;
 

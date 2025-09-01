@@ -3,7 +3,11 @@ pub mod junction;
 pub mod reservoir;
 pub mod tank;
 
-use super::Position;
+pub use junction::{Junction, JunctionBuilder};
+pub use reservoir::{Reservoir, ReservoirBuilder};
+pub use tank::{Tank, TankBuilder};
+
+pub use super::Position;
 
 //use super::*;
 

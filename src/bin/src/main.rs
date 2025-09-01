@@ -28,6 +28,7 @@ use once_cell::sync::Lazy;
 static WDN: Lazy<Network> = Lazy::new(|| {
     match Network::read_from_file(
         "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Hanoi_optimal.inp",
+        // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Modena.inp",
     ) {
         Ok(wdn) => wdn,
         Err(eror) => panic!("Cannot read the file because of : {}", eror),
@@ -85,6 +86,18 @@ fn show_static_wdn() {
     };
 
     println!("Flow unit = {:?}", WDN.options.as_ref().unwrap().flow_unit);
+
+    let mut tmp_net = WDN.clone();
+
+    let mut solver = Solver::new(&mut tmp_net, None);
+
+    let _outnet = solver.compute();
+    println!(
+        "Iters = {:?}, (DQ, DH) = {:?}, Time-Analysis: {:?} MS",
+        solver.get_final_iterations(),
+        solver.get_final_errors(),
+        solver.get_time_analysis(),
+    );
 }
 
 #[allow(dead_code)]

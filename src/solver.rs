@@ -11,6 +11,8 @@
 // a21 : incidence matrix (self.junction_count x np)
 // a12 = transpose(a21) : incidence matrix (np x self.junction_count)
 
+use std::time::{Duration, Instant};
+
 use crate::network::FlowUnits;
 
 use super::network::node::*;
@@ -42,6 +44,7 @@ pub struct Solver<'a> {
     n: f64,
     iterations: Option<usize>,
     final_error: Option<(f64, f64)>,
+    time_analysis: Option<Duration>,
     objective_error: f64,
 }
 
@@ -99,6 +102,7 @@ impl<'a> Solver<'a> {
             iterations: None,
             final_error: None,
             objective_error: obj_err,
+            time_analysis: None,
         };
         solver.convert_2is();
         solver
@@ -130,7 +134,12 @@ impl<'a> Solver<'a> {
         "0.1.0"
     }
 
+    pub fn get_time_analysis(&self) -> Option<Duration> {
+        self.time_analysis
+    }
     pub fn compute(&mut self) -> Option<&Network> {
+        let chronos = Instant::now();
+
         let (a21, a10, h0, q) = self.get_network();
 
         let nn = a21.len();
@@ -357,6 +366,7 @@ impl<'a> Solver<'a> {
         self.iterations = Some(iter);
         self.final_error = Some((final_err_q, final_err_h));
 
+        self.time_analysis = Some(chronos.elapsed());
         /*  let wdn = NetworkBuilder::new()
         .set_junctions(Some(self.junctions.clone()))
         .set_pipes(Some(self.pipes.clone()))

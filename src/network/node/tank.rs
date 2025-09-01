@@ -65,7 +65,7 @@ impl Node for Tank {
 
 impl Default for Tank {
     fn default() -> Self {
-        Tank::new(0usize, 100.0f64, 2.0f64)
+        Tank::new(0usize, 0.0f64, 0.0f64)
     }
 }
 

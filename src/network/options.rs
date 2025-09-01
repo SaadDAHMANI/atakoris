@@ -14,7 +14,23 @@ pub struct Options {
     pub emitter_exponent: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            flow_unit: FlowUnits::Lps,
+            headloss_formula: HeadlossFormula::Hw,
+            viscosity: 0.0000001f64,
+            trials: 40,
+            accuracy: 0.0001,
+            unbalanced: Unbalanced::StopIter,
+            pattern: 0,
+            demand_multiplier: 1.0,
+            emitter_exponent: 0.5,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum HeadlossFormula {
     ///
     /// Hazen-Williams (H-W)
@@ -32,13 +48,13 @@ pub enum HeadlossFormula {
     Cm,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Unbalanced {
     StopIter,
     ContinueIter(usize),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FlowUnits {
     ///
     /// cubic feet per second

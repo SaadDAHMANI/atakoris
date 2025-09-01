@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 use super::Position;
@@ -13,13 +15,22 @@ pub enum LinkType {
     Valve(ValveType),
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Deserialize, Serialize, Eq, PartialOrd, Ord)]
 pub enum LinkStatus {
     Open,
     Closed,
 }
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+impl Display for LinkStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Open => write!(f, "Open"),
+            Self::Closed => write!(f, "Closed"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ValveType {
     FCV,
     PBV,
@@ -27,6 +38,19 @@ pub enum ValveType {
     TCV,
     PSV,
     GPV,
+}
+
+impl Display for ValveType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::FCV => write!(f, "FCV"),
+            Self::PBV => write!(f, "PBV"),
+            Self::PRV => write!(f, "PRV"),
+            Self::TCV => write!(f, "TCV"),
+            Self::PSV => write!(f, "PSV"),
+            Self::GPV => write!(f, "GPV"),
+        }
+    }
 }
 
 pub trait Link {
