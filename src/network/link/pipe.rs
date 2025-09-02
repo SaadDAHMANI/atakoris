@@ -1,4 +1,4 @@
-use crate::{FlowUnits, network::Position};
+use crate::{CMH_FACTOR, FlowUnits, LPM_FACTOR, LPS_FACTOR, network::Position};
 
 use super::*;
 use serde::{Deserialize, Serialize};
@@ -44,7 +44,7 @@ pub struct Pipe {
 impl Pipe {
     pub fn headloss(&self) -> Option<f64> {
         let hl = match self.flow {
-            Some(q) => Some(self.resistance() * q.abs().powf(1.852)),
+            Some(q) => Some(self.resistance() * (q.abs() * self.get_flow_factor()).powf(1.852)),
             None => None,
         };
         hl
@@ -88,12 +88,23 @@ impl Pipe {
     #[allow(dead_code)]
     pub fn velocity(&self) -> Option<f64> {
         let v = match self.flow {
-            Some(q) => Some((4.0 * q) / (std::f64::consts::PI * (self.diameter * 0.001).powi(2))),
+            Some(q) => Some(
+                (4.0 * q * self.get_flow_factor())
+                    / (std::f64::consts::PI * (self.diameter * 0.001).powi(2)),
+            ),
             None => None,
         };
         v
     }
-
+    fn get_flow_factor(&self) -> f64 {
+        match self.flow_unit {
+            FlowUnits::Lps => LPS_FACTOR,
+            FlowUnits::Cms => 1.0,
+            FlowUnits::Cmh => CMH_FACTOR,
+            FlowUnits::Lpm => LPM_FACTOR,
+            _ => 1.0,
+        }
+    }
     pub fn get_vertices(&self) -> Option<&Vec<Position>> {
         match &self.vertices {
             None => None,

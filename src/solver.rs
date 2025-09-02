@@ -13,7 +13,7 @@
 
 use std::time::{Duration, Instant};
 
-use crate::network::FlowUnits;
+use crate::{AFD_FACTOR, CMH_FACTOR, LPS_FACTOR, network::FlowUnits};
 
 // use super::network::node::*;
 //use super::network::link::{pipe::Pipe, pump::Pump, valve::Valve};
@@ -426,11 +426,11 @@ impl<'a> Solver<'a> {
         match &wdn.junctions {
             None => 1.0,
             Some(_items) => match wdn.options.flow_unit {
-                FlowUnits::Lps => 0.001,
-                FlowUnits::Afd => 0.014276394,
+                FlowUnits::Lps => LPS_FACTOR,
+                FlowUnits::Afd => AFD_FACTOR,
                 FlowUnits::Cfs => 1.0,
                 FlowUnits::Cmd => 1.0,
-                FlowUnits::Cmh => 1.0 / 3600.0,
+                FlowUnits::Cmh => CMH_FACTOR,
                 FlowUnits::Gpm => 1.0,
                 FlowUnits::Imgd => 1.0,
                 FlowUnits::Lpm => 1.0,

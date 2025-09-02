@@ -16,7 +16,25 @@ pub use link::valve::Valve;
 pub use position::Position;
 
 use super::parsers::inpfileparser::InpFileParser;
-
+//------------------------------------------------
+/*
+FlowUnits::Lps => 0.001,
+               FlowUnits::Afd => 0.014276394,
+               FlowUnits::Cfs => 1.0,
+               FlowUnits::Cmd => 1.0,
+               FlowUnits::Cmh => 1.0 / 3600.0,
+               FlowUnits::Gpm => 1.0,
+               FlowUnits::Imgd => 1.0,
+               FlowUnits::Lpm => 1.0,
+               FlowUnits::Mgd => 1.0,
+               FlowUnits::Mld => 1.0,
+               FlowUnits::Cms => 1.0,
+               */
+pub(crate) const AFD_FACTOR: f64 = 0.014276394;
+pub(crate) const LPS_FACTOR: f64 = 0.001;
+pub(crate) const LPM_FACTOR: f64 = 0.001 / 60.0;
+pub(crate) const CMH_FACTOR: f64 = 1.0 / 3600.0;
+// -----------------------------------------------
 include!("options.rs");
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
