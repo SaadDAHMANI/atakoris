@@ -12,7 +12,7 @@ pub struct Junction {
     pub head: Option<f64>,
     #[cfg(feature = "optimization")]
     target_head: Option<f64>,
-    pub pressure: Option<f64>,
+    // pressure: Option<f64>,
 }
 
 impl Junction {
@@ -27,7 +27,6 @@ impl Junction {
             pattern: None,
             #[cfg(feature = "optimization")]
             target_head: None,
-            pressure: None,
         }
     }
 
@@ -164,7 +163,7 @@ impl JunctionBuilder {
             demand: self.demand,
             head: self.head,
             pattern: self.pattern,
-            pressure: None,
+
             #[cfg(feature = "optimization")]
             target_head: self.target_head,
         }

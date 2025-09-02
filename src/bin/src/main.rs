@@ -98,6 +98,26 @@ fn show_static_wdn() {
         solver.get_final_errors(),
         solver.get_time_analysis(),
     );
+    match &tmp_net.pipes {
+        None => println!("no pipes !!!"),
+        Some(pipes) => {
+            println!("Pipes = {:?}", pipes.len());
+
+            for p in pipes.iter() {
+                println!("{}, Q: {:?}", p.id, p.flow,);
+            }
+        }
+    };
+
+    match &tmp_net.junctions {
+        None => println!("no junction !!!"),
+        Some(nodes) => {
+            println!("Junctions = {:?}", nodes.len());
+            nodes
+                .iter()
+                .for_each(|jn| println!("id: {}, Pressure: {:?}", jn.id, jn.pressure()));
+        }
+    };
 }
 
 #[allow(dead_code)]

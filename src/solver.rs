@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 
 use crate::network::FlowUnits;
 
-use super::network::node::*;
+// use super::network::node::*;
 //use super::network::link::{pipe::Pipe, pump::Pump, valve::Valve};
 //use super::network::node::{junction::Junction, reservoir::Reservoir, tank::Tank};
 use super::network::Network;
@@ -36,7 +36,7 @@ pub struct Solver<'a> {
     pipe_count: usize,
     pump_count: usize,
     valve_count: usize,
-
+    flow_unit_multiplayer: f64,
     ///
     /// non-zero & strict positive m-value. Default value : m = 100.
     ///
@@ -89,7 +89,9 @@ impl<'a> Solver<'a> {
             Some(objerr) => objerr,
         };
 
-        let mut solver = Solver {
+        let flow_unit_multiplayer = Solver::conversion_2is_multiplayer(&wdn);
+
+        let solver = Solver {
             network: wdn,
             junction_count: njunction,
             tank_count: ntank,
@@ -103,8 +105,10 @@ impl<'a> Solver<'a> {
             final_error: None,
             objective_error: obj_err,
             time_analysis: None,
+            flow_unit_multiplayer,
         };
-        solver.convert_2is();
+        //solver.convert_2is();
+        //
         solver
     }
 
@@ -130,8 +134,8 @@ impl<'a> Solver<'a> {
         self.final_error
     }
 
-    pub fn get_version(&self) -> &str {
-        "0.1.0"
+    pub fn get_version(&self) -> &'static str {
+        "0.1.2"
     }
 
     pub fn get_time_analysis(&self) -> Option<Duration> {
@@ -334,7 +338,7 @@ impl<'a> Solver<'a> {
                     //     false => stoploop = false,
                     //     true => stoploop = true,
                     //  };
-                    stoploop = true;
+                    stoploop = check_h_err.0;
                 }
             };
 
@@ -382,7 +386,7 @@ impl<'a> Solver<'a> {
             Some(junctions) => {
                 for i in 0..self.junction_count {
                     junctions[i].head = Some(heads_h[i]);
-                    junctions[i].pressure = junctions[i].pressure();
+                    //junctions[i].pressure = junctions[i].pressure();
                 }
             }
         };
@@ -391,7 +395,7 @@ impl<'a> Solver<'a> {
             None => {}
             Some(pipes) => {
                 for i in 0..self.pipe_count {
-                    pipes[i].flow = Some(flows_q[i]);
+                    pipes[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
                 }
             }
         }
@@ -400,7 +404,7 @@ impl<'a> Solver<'a> {
             None => {}
             Some(pumps) => {
                 for i in 0..self.pump_count {
-                    pumps[i].flow = Some(flows_q[i]);
+                    pumps[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
                 }
             }
         };
@@ -409,7 +413,7 @@ impl<'a> Solver<'a> {
             None => {}
             Some(valves) => {
                 for i in 0..self.valve_count {
-                    valves[i].flow = Some(flows_q[i]);
+                    valves[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
                 }
             }
         };
@@ -418,33 +422,26 @@ impl<'a> Solver<'a> {
     ///
     /// Convert the network to the IS (International System)
     ///
-    fn convert_2is(&mut self) {
-        match &mut self.network.options {
-            None => {}
-            Some(optns) => {
-                match &mut self.network.junctions {
-                    None => {}
-                    Some(items) => {
-                        let mut _multiplier: f64 = 1.0;
-                        match optns.flow_unit {
-                            FlowUnits::Lps => _multiplier = 0.001,
-                            FlowUnits::Afd => _multiplier = 0.014276394,
-                            FlowUnits::Cfs => _multiplier = 1.0,
-                            FlowUnits::Cmd => _multiplier = 1.0,
-                            FlowUnits::Cmh => _multiplier = 1.0 / 3600.0,
-                            FlowUnits::Gpm => _multiplier = 1.0,
-                            FlowUnits::Imgd => _multiplier = 1.0,
-                            FlowUnits::Lpm => _multiplier = 1.0,
-                            FlowUnits::Mgd => _multiplier = 1.0,
-                            FlowUnits::Mld => _multiplier = 1.0,
-                            FlowUnits::Cms => _multiplier = 1.0,
-                        };
-                        items.iter_mut().for_each(|jn| jn.demand *= _multiplier);
-                        optns.flow_unit = FlowUnits::Cms;
-                    }
-                };
-            }
-        };
+    fn conversion_2is_multiplayer(wdn: &Network) -> f64 {
+        match &wdn.options {
+            None => 1.0,
+            Some(optns) => match &wdn.junctions {
+                None => 1.0,
+                Some(_items) => match optns.flow_unit {
+                    FlowUnits::Lps => 0.001,
+                    FlowUnits::Afd => 0.014276394,
+                    FlowUnits::Cfs => 1.0,
+                    FlowUnits::Cmd => 1.0,
+                    FlowUnits::Cmh => 1.0 / 3600.0,
+                    FlowUnits::Gpm => 1.0,
+                    FlowUnits::Imgd => 1.0,
+                    FlowUnits::Lpm => 1.0,
+                    FlowUnits::Mgd => 1.0,
+                    FlowUnits::Mld => 1.0,
+                    FlowUnits::Cms => 1.0,
+                },
+            },
+        }
     }
 
     fn link_sizes(&self) -> (usize, usize, usize) {
@@ -462,7 +459,7 @@ impl<'a> Solver<'a> {
         let np = self.pipe_count + self.pump_count + self.valve_count;
 
         // nodal demand
-        let mut _q = vec![0.0f64; self.junction_count];
+        let mut q = vec![0.0f64; self.junction_count];
         //H0 : reservoirs + tanks
         let mut _h0 = vec![0.0f64; no];
 
@@ -521,7 +518,7 @@ impl<'a> Solver<'a> {
                 };
                 //nodal demand
                 for i in 0..self.junction_count {
-                    _q[i] = junctions[i].demand;
+                    q[i] = junctions[i].demand * self.flow_unit_multiplayer;
                 }
             }
         };
@@ -650,7 +647,7 @@ impl<'a> Solver<'a> {
             }
         };
 
-        (_a21, _a10, _h0, _q)
+        (_a21, _a10, _h0, q)
     }
 
     fn check_convergence(actual: &[f64], previous: &[f64], objective: f64) -> (bool, f64) {
