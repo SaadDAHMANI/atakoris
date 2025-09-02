@@ -17,7 +17,7 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
-            flow_unit: FlowUnits::Lps,
+            flow_unit: FlowUnits::default(),
             headloss_formula: HeadlossFormula::Hw,
             viscosity: 0.0000001f64,
             trials: 40,
@@ -48,13 +48,13 @@ pub enum HeadlossFormula {
     Cm,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Unbalanced {
     StopIter,
     ContinueIter(usize),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FlowUnits {
     ///
     /// cubic feet per second
@@ -107,6 +107,13 @@ pub enum FlowUnits {
     ///
     /// cubic meters per day
     Cmd,
+}
+
+impl Default for FlowUnits {
+    /// Default value is SI (m3/s).
+    fn default() -> Self {
+        FlowUnits::Cms
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
+use crate::FlowUnits;
+
 use super::Position;
 
 pub mod pipe;
@@ -78,4 +80,7 @@ pub trait Link {
     fn print(&self) {
         println!("{}", self.to_string());
     }
+
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits);
+    fn get_flow_unit(&self) -> FlowUnits;
 }

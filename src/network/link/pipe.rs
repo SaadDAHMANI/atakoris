@@ -1,4 +1,4 @@
-use crate::network::Position;
+use crate::{FlowUnits, network::Position};
 
 use super::*;
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,7 @@ pub struct Pipe {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub check_valve: bool,
+    pub flow_unit: FlowUnits,
 }
 
 impl Pipe {
@@ -65,7 +66,7 @@ impl Pipe {
         }
     }
 
-    #[allow(dead_code)]
+    /// flow in m3/s.
     pub fn get_r_of_q(&self, flow: f64) -> f64 {
         if self.status == LinkStatus::Open {
             if self.check_valve {
@@ -129,6 +130,13 @@ impl Link for Pipe {
         self.length
     }
 
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
     fn link_type(&self) -> LinkType {
         LinkType::Pipe
     }
@@ -176,6 +184,7 @@ impl Default for Pipe {
             flow: None,
             status: LinkStatus::Open,
             check_valve: false,
+            flow_unit: FlowUnits::Cms,
         }
     }
 }
@@ -196,6 +205,7 @@ pub struct PipeBuilder {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub check_valve: bool,
+    pub flow_unit: FlowUnits,
 }
 
 impl PipeBuilder {
@@ -257,6 +267,10 @@ impl PipeBuilder {
         self.check_valve = check_valve;
         self
     }
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
 
     pub fn build(self) -> Pipe {
         Pipe {
@@ -272,6 +286,7 @@ impl PipeBuilder {
             flow: None,
             status: self.status,
             check_valve: self.check_valve,
+            flow_unit: self.flow_unit,
         }
     }
 }
@@ -291,6 +306,7 @@ impl Default for PipeBuilder {
             flow: None,
             status: LinkStatus::Open,
             check_valve: false,
+            flow_unit: FlowUnits::Cms,
         }
     }
 }

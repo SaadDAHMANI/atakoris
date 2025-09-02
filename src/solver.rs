@@ -423,23 +423,20 @@ impl<'a> Solver<'a> {
     /// Convert the network to the IS (International System)
     ///
     fn conversion_2is_multiplayer(wdn: &Network) -> f64 {
-        match &wdn.options {
+        match &wdn.junctions {
             None => 1.0,
-            Some(optns) => match &wdn.junctions {
-                None => 1.0,
-                Some(_items) => match optns.flow_unit {
-                    FlowUnits::Lps => 0.001,
-                    FlowUnits::Afd => 0.014276394,
-                    FlowUnits::Cfs => 1.0,
-                    FlowUnits::Cmd => 1.0,
-                    FlowUnits::Cmh => 1.0 / 3600.0,
-                    FlowUnits::Gpm => 1.0,
-                    FlowUnits::Imgd => 1.0,
-                    FlowUnits::Lpm => 1.0,
-                    FlowUnits::Mgd => 1.0,
-                    FlowUnits::Mld => 1.0,
-                    FlowUnits::Cms => 1.0,
-                },
+            Some(_items) => match wdn.options.flow_unit {
+                FlowUnits::Lps => 0.001,
+                FlowUnits::Afd => 0.014276394,
+                FlowUnits::Cfs => 1.0,
+                FlowUnits::Cmd => 1.0,
+                FlowUnits::Cmh => 1.0 / 3600.0,
+                FlowUnits::Gpm => 1.0,
+                FlowUnits::Imgd => 1.0,
+                FlowUnits::Lpm => 1.0,
+                FlowUnits::Mgd => 1.0,
+                FlowUnits::Mld => 1.0,
+                FlowUnits::Cms => 1.0,
             },
         }
     }

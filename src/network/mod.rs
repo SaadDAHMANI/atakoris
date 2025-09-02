@@ -28,7 +28,7 @@ pub struct Network {
     pub pipes: Option<Vec<Pipe>>,
     pub pumps: Option<Vec<Pump>>,
     pub valves: Option<Vec<Valve>>,
-    pub options: Option<Options>,
+    pub options: Options,
 }
 
 impl Network {
@@ -70,8 +70,10 @@ impl Network {
             }
         };
     }
+}
 
-    pub fn get_empty() -> Self {
+impl Default for Network {
+    fn default() -> Self {
         Network {
             title: None,
             junctions: None,
@@ -80,7 +82,7 @@ impl Network {
             pipes: None,
             pumps: None,
             valves: None,
-            options: None,
+            options: Options::default(),
         }
     }
 }
@@ -94,7 +96,7 @@ pub struct NetworkBuilder {
     pub pipes: Option<Vec<Pipe>>,
     pub pumps: Option<Vec<Pump>>,
     pub valves: Option<Vec<Valve>>,
-    pub options: Option<Options>,
+    pub options: Options,
 }
 
 impl NetworkBuilder {
@@ -107,7 +109,7 @@ impl NetworkBuilder {
             pipes: None,
             pumps: None,
             valves: None,
-            options: None,
+            options: Options::default(),
         };
 
         wdnb
@@ -148,7 +150,7 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn set_options(mut self, options: Option<Options>) -> Self {
+    pub fn set_options(mut self, options: Options) -> Self {
         self.options = options;
         self
     }

@@ -14,13 +14,13 @@ impl FfiDto {
         let c_str = unsafe { CStr::from_ptr(json_net_ptr) };
         let network: Network = match c_str.to_str() {
             Err(eror) => {
-                let mut err_net = Network::get_empty();
+                let mut err_net = Network::default();
                 err_net.title = Some(eror.to_string());
                 err_net
             }
             Ok(json_net) => {
                 let net: Network = match serde_json::from_str(json_net) {
-                    Err(_eror) => Network::get_empty(),
+                    Err(_eror) => Network::default(),
                     Ok(net) => net,
                 };
                 net

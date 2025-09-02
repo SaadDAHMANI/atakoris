@@ -9,6 +9,7 @@ pub struct Tank {
     pub elevation: f64,
     //pub head : Option<f64>,
     pub initial_level: f64,
+    flow_unit: FlowUnits,
     //pub min_level : f64,
     //pub max_level : f64,
     //pub diameter : f64,
@@ -25,6 +26,7 @@ impl Tank {
             elevation,
             initial_level,
             name: None,
+            flow_unit: FlowUnits::default(),
         }
     }
 
@@ -61,6 +63,13 @@ impl Node for Tank {
             self.initial_level
         )
     }
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
 }
 
 impl Default for Tank {
@@ -76,6 +85,7 @@ pub struct TankBuilder {
     pub elevation: f64,
     //pub head : Option<f64>,
     pub initial_level: f64,
+    pub flow_unit: FlowUnits,
     //pub min_level : f64,
     //pub max_level : f64,
     //pub diameter : f64,
@@ -92,6 +102,7 @@ impl TankBuilder {
             name: None,
             elevation: 0.0f64,
             initial_level: 0.0f64,
+            flow_unit: FlowUnits::default(),
         }
     }
 
@@ -120,6 +131,11 @@ impl TankBuilder {
         self
     }
 
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
+
     pub fn build(self) -> Tank {
         Tank {
             id: self.id,
@@ -127,6 +143,7 @@ impl TankBuilder {
             name: self.name,
             elevation: self.elevation,
             initial_level: self.initial_level,
+            flow_unit: self.flow_unit,
         }
     }
 }

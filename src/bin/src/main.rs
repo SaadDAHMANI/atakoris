@@ -85,7 +85,7 @@ fn show_static_wdn() {
         }
     };
 
-    println!("Flow unit = {:?}", WDN.options.as_ref().unwrap().flow_unit);
+    println!("Flow unit = {:?}", WDN.options.flow_unit);
 
     let mut tmp_net = WDN.clone();
 
@@ -572,7 +572,7 @@ fn test_2loop_network() {
 
     let _net2 = solver.compute();
 
-    println!("Flow unit (After) = {:?}", net.options.unwrap().flow_unit);
+    println!("Flow unit (After) = {:?}", net.options.flow_unit);
 
     if let Some(nodes) = &net.junctions {
         println!("___________[JUNCTIONS]____________");

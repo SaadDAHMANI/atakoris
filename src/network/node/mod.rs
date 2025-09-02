@@ -7,7 +7,7 @@ pub use junction::{Junction, JunctionBuilder};
 pub use reservoir::{Reservoir, ReservoirBuilder};
 pub use tank::{Tank, TankBuilder};
 
-pub use super::Position;
+pub use super::{FlowUnits, Position};
 
 //use super::*;
 
@@ -45,6 +45,10 @@ pub trait Node {
             Some(h) => Some(h - self.get_elevation()),
         }
     }
+
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits);
+
+    fn get_flow_unit(&self) -> FlowUnits;
 
     fn print(&self) {
         println!("{}", self.to_string());

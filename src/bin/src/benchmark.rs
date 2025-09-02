@@ -1,7 +1,7 @@
 pub mod benchmark {
     use atakoris::network::node::junction::{Junction, JunctionBuilder};
     use atakoris::network::node::tank::{Tank, TankBuilder};
-    use atakoris::network::{Network, NetworkBuilder, Position};
+    use atakoris::network::{Network, NetworkBuilder};
     //use atakor::network::node::reservoir::{Reservoir, ReservoirBuilder};
 
     use atakoris::network::link::LinkStatus;
@@ -90,27 +90,16 @@ pub mod benchmark {
 
     #[allow(dead_code)]
     pub fn network4() -> Network {
-        let t1 = Tank {
-            id: 0,
-            position: Position::default(),
-            name: Some(String::from("T1")),
-            elevation: 100.0,
-            initial_level: 0.0,
-        };
+        let flow_unit: FlowUnits = FlowUnits::Cms;
 
-        let t2 = Tank {
-            id: 3,
-            position: Position::default(),
-            name: Some(String::from("T2")),
-            elevation: 100.0,
-            initial_level: 0.0,
-        };
-
+        let t1 = Tank::new(0, 100.0, 0.0);
+        let t2 = Tank::new(3, 100.0, 0.0);
         let j1 = JunctionBuilder::new()
             .set_id(1)
             .set_name("J1")
             .set_elevation(0.0)
             .set_demand(0.1)
+            .set_flow_unit(FlowUnits::Cms)
             .build();
 
         let j2 = JunctionBuilder::new()
@@ -133,6 +122,7 @@ pub mod benchmark {
             flow: None,
             status: LinkStatus::Open,
             check_valve: false,
+            flow_unit,
         };
 
         let p2 = Pipe {
@@ -148,7 +138,7 @@ pub mod benchmark {
             flow: None,
             status: LinkStatus::Open,
             check_valve: false,
-            //velocity : None,
+            flow_unit,
         };
 
         let p3 = Pipe {
@@ -164,7 +154,7 @@ pub mod benchmark {
             flow: None,
             status: LinkStatus::Open,
             check_valve: false,
-            //velocity : None,
+            flow_unit,
         };
 
         let pmp1: Pump = PumpBuilder::new()
@@ -392,7 +382,7 @@ pub mod benchmark {
             .set_junctions(Some(js))
             .set_tanks(Some(ts))
             .set_pipes(Some(ps))
-            .set_options(Some(options))
+            .set_options(options)
             .build();
         net2
     }
@@ -528,7 +518,7 @@ pub mod benchmark {
             .set_junctions(Some(js))
             .set_tanks(Some(ts))
             .set_pipes(Some(ps))
-            .set_options(Some(options))
+            .set_options(options)
             .build();
         netw
     }
@@ -649,7 +639,7 @@ pub mod benchmark {
             .set_junctions(Some(js))
             .set_tanks(Some(ts))
             .set_pipes(Some(ps))
-            .set_options(Some(options))
+            .set_options(options)
             .build();
         netw
     }

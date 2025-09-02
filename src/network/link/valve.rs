@@ -17,6 +17,7 @@ pub struct Valve {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub valvetype: ValveType,
+    flow_unit: FlowUnits,
 }
 
 impl Valve {
@@ -72,6 +73,13 @@ impl Link for Valve {
         None
     }
 
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
     fn link_type(&self) -> LinkType {
         LinkType::Valve(self.valvetype)
     }
@@ -117,6 +125,7 @@ impl Default for Valve {
             status: LinkStatus::Open,
             k_value: 0.0,
             valvetype: ValveType::GPV,
+            flow_unit: FlowUnits::default(),
         }
     }
 }
@@ -137,6 +146,7 @@ pub struct ValveBuilder {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub valvetype: ValveType,
+    pub flow_unit: FlowUnits,
 }
 
 impl ValveBuilder {
@@ -199,6 +209,11 @@ impl ValveBuilder {
         self
     }
 
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
+
     pub fn build(self) -> Valve {
         Valve {
             id: self.id,
@@ -213,6 +228,7 @@ impl ValveBuilder {
             status: self.status,
             k_value: self.k_value,
             valvetype: self.valvetype,
+            flow_unit: self.flow_unit,
         }
     }
 }
@@ -232,6 +248,7 @@ impl Default for ValveBuilder {
             status: LinkStatus::Open,
             k_value: 0.0,
             valvetype: ValveType::GPV,
+            flow_unit: FlowUnits::default(),
         }
     }
 }

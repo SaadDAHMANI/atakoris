@@ -8,6 +8,7 @@ pub struct Reservoir {
     pub name: Option<String>,
     pub head: f64,
     pub pattern: Option<String>,
+    flow_unit: FlowUnits,
 }
 
 impl Node for Reservoir {
@@ -38,6 +39,13 @@ impl Node for Reservoir {
             self.pattern
         )
     }
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
 }
 
 impl Default for Reservoir {
@@ -48,6 +56,7 @@ impl Default for Reservoir {
             name: None,
             head: 0.0,
             pattern: None,
+            flow_unit: FlowUnits::default(),
         }
     }
 }
@@ -60,6 +69,7 @@ pub struct ReservoirBuilder {
     pub name: Option<String>,
     pub head: f64,
     pub pattern: Option<String>,
+    pub flow_unit: FlowUnits,
 }
 
 impl ReservoirBuilder {
@@ -70,6 +80,7 @@ impl ReservoirBuilder {
             head: 0.0f64,
             name: None,
             pattern: None,
+            flow_unit: FlowUnits::default(),
         }
     }
 
@@ -97,6 +108,10 @@ impl ReservoirBuilder {
         self
     }
 
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
     pub fn build(self) -> Reservoir {
         Reservoir {
             id: self.id,
@@ -104,6 +119,7 @@ impl ReservoirBuilder {
             head: self.head,
             name: self.name,
             pattern: self.pattern,
+            flow_unit: self.flow_unit,
         }
     }
 }

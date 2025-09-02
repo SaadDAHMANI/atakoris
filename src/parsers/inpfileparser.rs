@@ -10,7 +10,7 @@ use crate::network::link::pump::*;
 use crate::network::node::junction::*;
 use crate::network::node::reservoir::*;
 use crate::network::node::tank::*;
-use crate::network::{FlowUnits, HeadlossFormula, Options, OptionsBuilder};
+use crate::network::{FlowUnits, HeadlossFormula, Options, OptionsBuilder, link::Link, node::Node};
 
 ///
 /// This is a parser for "*.inp" files (Epanet file format)
@@ -40,8 +40,8 @@ impl<'a> InpFileParser<'a> {
                 let mut tanks = self.get_tanks(&lines);
                 let mut reservoirs = self.get_reservoirs(&lines);
                 let mut pipes = self.get_pipes(&lines);
-                let pumps = self.get_pumps(&lines);
-                let options = self.get_options(&lines);
+                let mut pumps = self.get_pumps(&lines);
+                let options = self.get_options(&lines).unwrap_or_default();
 
                 let node_positions = self.get_coordinates(&lines);
                 let link_vertices = self.get_vertices(lines);
@@ -124,6 +124,36 @@ impl<'a> InpFileParser<'a> {
                             Some(optins) => {}
                         };
                 */
+                // update node and pipe flow_unit:
+                if let Some(nodes) = &mut junctions {
+                    nodes
+                        .iter_mut()
+                        .for_each(|nd| nd.set_flow_unit(options.flow_unit));
+                };
+
+                if let Some(nodes) = &mut tanks {
+                    nodes
+                        .iter_mut()
+                        .for_each(|nd| nd.set_flow_unit(options.flow_unit));
+                };
+
+                if let Some(nodes) = &mut reservoirs {
+                    nodes
+                        .iter_mut()
+                        .for_each(|nd| nd.set_flow_unit(options.flow_unit));
+                };
+
+                if let Some(edges) = &mut pipes {
+                    edges
+                        .iter_mut()
+                        .for_each(|lnk| lnk.set_flow_unit(options.flow_unit));
+                };
+
+                if let Some(edges) = &mut pumps {
+                    edges
+                        .iter_mut()
+                        .for_each(|lnk| lnk.set_flow_unit(options.flow_unit));
+                };
 
                 let wdn = NetworkBuilder::new()
                     .set_title(title)

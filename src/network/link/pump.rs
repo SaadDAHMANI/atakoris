@@ -15,6 +15,7 @@ pub struct Pump {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub parameters: Option<String>,
+    flow_unit: FlowUnits,
 }
 
 impl Pump {
@@ -61,6 +62,13 @@ impl Link for Pump {
         LinkType::Pump
     }
 
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
     fn default_with(
         id: usize,
         start_node: usize,
@@ -104,6 +112,7 @@ pub struct PumpBuilder {
     pub gamma: f64,
     pub status: LinkStatus,
     pub parameters: Option<String>,
+    pub flow_unit: FlowUnits,
 }
 
 impl PumpBuilder {
@@ -156,6 +165,11 @@ impl PumpBuilder {
         self
     }
 
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
+
     pub fn build(self) -> Pump {
         Pump {
             id: self.id,
@@ -168,6 +182,7 @@ impl PumpBuilder {
             flow: None,
             status: self.status,
             parameters: self.parameters,
+            flow_unit: self.flow_unit,
         }
     }
 }
@@ -184,6 +199,7 @@ impl Default for PumpBuilder {
             gamma: 0.0,
             status: LinkStatus::Open,
             parameters: None,
+            flow_unit: FlowUnits::default(),
         }
     }
 }

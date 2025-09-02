@@ -1,3 +1,5 @@
+use crate::FlowUnits;
+
 use super::*;
 use serde::{Deserialize, Serialize};
 //-----------------------------------Junction----------------------------
@@ -10,9 +12,9 @@ pub struct Junction {
     pub pattern: Option<usize>,
     pub name: Option<String>,
     pub head: Option<f64>,
+    flow_unit: FlowUnits,
     #[cfg(feature = "optimization")]
     target_head: Option<f64>,
-    // pressure: Option<f64>,
 }
 
 impl Junction {
@@ -27,6 +29,7 @@ impl Junction {
             pattern: None,
             #[cfg(feature = "optimization")]
             target_head: None,
+            flow_unit: FlowUnits::default(),
         }
     }
 
@@ -83,6 +86,14 @@ impl Node for Junction {
     fn get_head(&self) -> Option<f64> {
         self.head
     }
+
+    fn set_flow_unit(&mut self, flow_unit: FlowUnits) {
+        self.flow_unit = flow_unit;
+    }
+
+    fn get_flow_unit(&self) -> FlowUnits {
+        self.flow_unit
+    }
 }
 
 impl Default for Junction {
@@ -99,6 +110,7 @@ pub struct JunctionBuilder {
     pattern: Option<usize>,
     name: Option<String>,
     head: Option<f64>,
+    flow_unit: FlowUnits,
     #[cfg(feature = "optimization")]
     target_head: Option<f64>,
 }
@@ -112,6 +124,7 @@ impl JunctionBuilder {
             pattern: None,
             name: None,
             head: None,
+            flow_unit: FlowUnits::default(),
             #[cfg(feature = "optimization")]
             target_head: None,
         };
@@ -148,6 +161,10 @@ impl JunctionBuilder {
         self
     }
 
+    pub fn set_flow_unit(mut self, flow_unit: FlowUnits) -> Self {
+        self.flow_unit = flow_unit;
+        self
+    }
     #[cfg(feature = "optimization")]
     pub fn set_target_head(mut self, required_head: f64) -> Self {
         self.target_head = Some(required_head);
@@ -163,6 +180,7 @@ impl JunctionBuilder {
             demand: self.demand,
             head: self.head,
             pattern: self.pattern,
+            flow_unit: self.flow_unit,
 
             #[cfg(feature = "optimization")]
             target_head: self.target_head,
