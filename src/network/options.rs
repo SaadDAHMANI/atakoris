@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 ///
 /// Network and Analysis options
 ///
@@ -68,17 +70,17 @@ pub enum FlowUnits {
 
     ///
     /// million gallons per day
-    ///  
+    ///
     Mgd,
 
     ///
     /// Imperial MGD
-    ///  
+    ///
     Imgd,
 
     ///
     /// acre-feet per day
-    ///  
+    ///
     Afd,
 
     ///
@@ -91,22 +93,40 @@ pub enum FlowUnits {
 
     ///
     /// million liters per day
-    ///  
+    ///
     Mld,
 
     ///
     /// cubic meters per second
-    ///  
+    ///
     Cms,
 
     ///
     /// cubic meters per hour
-    ///  
+    ///
     Cmh,
 
     ///
     /// cubic meters per day
     Cmd,
+}
+
+impl Display for FlowUnits {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FlowUnits::Afd => write!(f, "AFD"),
+            FlowUnits::Cfs => write!(f, "CFS"),
+            FlowUnits::Cmd => write!(f, "m3/day"),
+            FlowUnits::Cmh => write!(f, "m3/hour"),
+            FlowUnits::Cms => write!(f, "m3/s"),
+            FlowUnits::Gpm => write!(f, "G/min"),
+            FlowUnits::Imgd => write!(f, "Imgd"),
+            FlowUnits::Lpm => write!(f, "l/min"),
+            FlowUnits::Lps => write!(f, "l/s"),
+            FlowUnits::Mgd => write!(f, "MGD"),
+            FlowUnits::Mld => write!(f, "Million l/day"),
+        }
+    }
 }
 
 impl Default for FlowUnits {

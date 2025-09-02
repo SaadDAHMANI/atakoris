@@ -21,7 +21,7 @@ pub enum NodeType {
 //------------------------------------Node-------------------------------
 
 pub trait Node {
-    fn default_with(id: usize, pos: Position) -> Self;
+    fn default_with(id: usize, pos: Position, flow_unit: FlowUnits) -> Self;
 
     fn get_id(&self) -> usize;
 

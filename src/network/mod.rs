@@ -5,6 +5,8 @@ pub mod link;
 pub mod node;
 pub mod position;
 
+pub use link::Link;
+pub use node::Node;
 pub use node::junction::{Junction, JunctionBuilder};
 pub use node::reservoir::{Reservoir, ReservoirBuilder};
 pub use node::tank::{Tank, TankBuilder};
@@ -34,6 +36,7 @@ pub(crate) const AFD_FACTOR: f64 = 0.014276394;
 pub(crate) const LPS_FACTOR: f64 = 0.001;
 pub(crate) const LPM_FACTOR: f64 = 0.001 / 60.0;
 pub(crate) const CMH_FACTOR: f64 = 1.0 / 3600.0;
+pub(crate) const CMD_FACTOR: f64 = 1.0 / (24.0 * 3600.0);
 // -----------------------------------------------
 include!("options.rs");
 
@@ -174,7 +177,10 @@ impl NetworkBuilder {
     }
 
     pub fn build(self) -> Network {
-        Network {
+        // ------------ update flow unit ---------------
+
+        // ---------------------------------------------
+        let mut wdnet = Network {
             title: self.title,
             junctions: self.junctions,
             tanks: self.tanks,
@@ -183,6 +189,38 @@ impl NetworkBuilder {
             pumps: self.pumps,
             valves: self.valves,
             options: self.options,
-        }
+        };
+        //-----------------------------------------
+        // update node and pipe flow_unit:
+        if let Some(nodes) = &mut wdnet.junctions {
+            nodes
+                .iter_mut()
+                .for_each(|nd| nd.set_flow_unit(wdnet.options.flow_unit));
+        };
+
+        if let Some(nodes) = &mut wdnet.tanks {
+            nodes
+                .iter_mut()
+                .for_each(|nd| nd.set_flow_unit(wdnet.options.flow_unit));
+        };
+
+        if let Some(nodes) = &mut wdnet.reservoirs {
+            nodes
+                .iter_mut()
+                .for_each(|nd| nd.set_flow_unit(wdnet.options.flow_unit));
+        };
+
+        if let Some(edges) = &mut wdnet.pipes {
+            edges
+                .iter_mut()
+                .for_each(|lnk| lnk.set_flow_unit(wdnet.options.flow_unit));
+        };
+
+        if let Some(edges) = &mut wdnet.pumps {
+            edges
+                .iter_mut()
+                .for_each(|lnk| lnk.set_flow_unit(wdnet.options.flow_unit));
+        };
+        wdnet
     }
 }

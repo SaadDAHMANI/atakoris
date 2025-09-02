@@ -109,53 +109,35 @@ pub mod benchmark {
             .set_demand(0.1)
             .build();
 
-        let p1 = Pipe {
-            id: 1,
-            vertices: None,
-            name: Some(String::from("P1")),
-            start: 0,
-            end: 1,
-            length: 100.0,
-            diameter: 0.100,
-            roughness: 130.0,
-            minor_loss: 0.0,
-            flow: None,
-            status: LinkStatus::Open,
-            check_valve: false,
-            flow_unit,
-        };
+        let p1 = PipeBuilder::new()
+            .set_id(1)
+            .set_start(0)
+            .set_end(1)
+            .set_length(100.0)
+            .set_diameter(100.0)
+            .set_roughness(130.0)
+            .set_flow_unit(flow_unit)
+            .build();
 
-        let p2 = Pipe {
-            id: 2,
-            name: Some(String::from("P2")),
-            vertices: None,
-            start: 1,
-            end: 2,
-            length: 100.0,
-            diameter: 0.100,
-            roughness: 130.0,
-            minor_loss: 0.0,
-            flow: None,
-            status: LinkStatus::Open,
-            check_valve: false,
-            flow_unit,
-        };
+        let p2 = PipeBuilder::new()
+            .set_id(2)
+            .set_start(1)
+            .set_end(2)
+            .set_length(100.0)
+            .set_diameter(100.0)
+            .set_roughness(130.0)
+            .set_flow_unit(flow_unit)
+            .build();
 
-        let p3 = Pipe {
-            id: 3,
-            vertices: None,
-            name: Some(String::from("P3")),
-            start: 0,
-            end: 2,
-            length: 100.0,
-            diameter: 0.100,
-            roughness: 130.0,
-            minor_loss: 0.0,
-            flow: None,
-            status: LinkStatus::Open,
-            check_valve: false,
-            flow_unit,
-        };
+        let p3 = PipeBuilder::new()
+            .set_id(3)
+            .set_start(0)
+            .set_end(2)
+            .set_length(100.0)
+            .set_diameter(100.0)
+            .set_roughness(130.0)
+            .set_flow_unit(flow_unit)
+            .build();
 
         let pmp1: Pump = PumpBuilder::new()
             .set_id(4)

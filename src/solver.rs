@@ -13,7 +13,7 @@
 
 use std::time::{Duration, Instant};
 
-use crate::{AFD_FACTOR, CMH_FACTOR, LPS_FACTOR, network::FlowUnits};
+use crate::{AFD_FACTOR, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, network::FlowUnits};
 
 // use super::network::node::*;
 //use super::network::link::{pipe::Pipe, pump::Pump, valve::Valve};
@@ -429,11 +429,11 @@ impl<'a> Solver<'a> {
                 FlowUnits::Lps => LPS_FACTOR,
                 FlowUnits::Afd => AFD_FACTOR,
                 FlowUnits::Cfs => 1.0,
-                FlowUnits::Cmd => 1.0,
+                FlowUnits::Cmd => CMD_FACTOR,
                 FlowUnits::Cmh => CMH_FACTOR,
                 FlowUnits::Gpm => 1.0,
                 FlowUnits::Imgd => 1.0,
-                FlowUnits::Lpm => 1.0,
+                FlowUnits::Lpm => LPM_FACTOR,
                 FlowUnits::Mgd => 1.0,
                 FlowUnits::Mld => 1.0,
                 FlowUnits::Cms => 1.0,

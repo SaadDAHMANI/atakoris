@@ -16,10 +16,11 @@ impl Node for Reservoir {
         self.id
     }
 
-    fn default_with(id: usize, pos: Position) -> Self {
+    fn default_with(id: usize, pos: Position, flow_unit: FlowUnits) -> Self {
         let mut nd = Reservoir::default();
         nd.id = id;
         nd.position = pos;
+        nd.flow_unit = flow_unit;
         nd
     }
     fn get_position(&self) -> (f32, f32) {

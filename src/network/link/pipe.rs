@@ -38,7 +38,7 @@ pub struct Pipe {
     //velocity : Option<f64>,
     pub status: LinkStatus,
     pub check_valve: bool,
-    pub flow_unit: FlowUnits,
+    flow_unit: FlowUnits,
 }
 
 impl Pipe {
