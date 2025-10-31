@@ -6,7 +6,7 @@ use std::os::raw::c_char;
 
 ///
 /// FfiDto (FFI DTO) is a Foriegn function interface with Data Transfer Objects (using Json).
-///    
+///
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FfiDto {}
 impl FfiDto {
