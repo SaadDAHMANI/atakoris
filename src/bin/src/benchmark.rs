@@ -93,12 +93,12 @@ pub mod benchmark {
         let flow_unit: FlowUnits = FlowUnits::Cms;
 
         let t1 = Tank::new(0, 50.0, 0.0);
-        let t2 = Tank::new(3, 50.0, 0.0);
+        let t2 = Tank::new(3, 0.0, 0.0);
         let j1 = JunctionBuilder::new()
             .set_id(1)
             .set_name("J1")
             .set_elevation(0.0)
-            .set_demand(0.1)
+            .set_demand(0.01)
             .set_flow_unit(FlowUnits::Cms)
             .build();
 
@@ -106,7 +106,7 @@ pub mod benchmark {
             .set_id(2)
             .set_name("J2")
             .set_elevation(0.0)
-            .set_demand(0.1)
+            .set_demand(0.01)
             .build();
 
         let p1 = PipeBuilder::new()
@@ -144,9 +144,10 @@ pub mod benchmark {
             .set_name("Pump1".to_owned())
             .set_start(3)
             .set_end(2)
-            .set_alpha(10.0)
-            .set_beta(-20.0)
+            .set_alpha(-3400.0)
+            .set_beta(22.0)
             .set_gamma(50.0)
+            // .set_power_rating(5.0)
             .set_status(LinkStatus::Open)
             .build();
 

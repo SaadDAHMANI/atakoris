@@ -384,40 +384,31 @@ impl<'a> Solver<'a> {
     }
 
     fn copy_results(&mut self, heads_h: &[f64], flows_q: &[f64]) {
-        match &mut self.network.junctions {
-            None => {}
-            Some(junctions) => {
-                for i in 0..self.junction_count {
-                    junctions[i].head = Some(heads_h[i]);
-                    //junctions[i].pressure = junctions[i].pressure();
-                }
+        if let Some(junctions) = &mut self.network.junctions {
+            for i in 0..self.junction_count {
+                junctions[i].head = Some(heads_h[i]);
             }
         };
 
-        match &mut self.network.pipes {
-            None => {}
-            Some(pipes) => {
-                for i in 0..self.pipe_count {
-                    pipes[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
-                }
-            }
-        }
-
-        match &mut self.network.pumps {
-            None => {}
-            Some(pumps) => {
-                for i in 0..self.pump_count {
-                    pumps[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
-                }
+        if let Some(pipes) = &mut self.network.pipes {
+            for i in 0..self.pipe_count {
+                pipes[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
             }
         };
 
-        match &mut self.network.valves {
-            None => {}
-            Some(valves) => {
-                for i in 0..self.valve_count {
-                    valves[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
-                }
+        let mut k: usize = self.pipe_count;
+
+        if let Some(pumps) = &mut self.network.pumps {
+            for i in 0..self.pump_count {
+                pumps[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
+                k += 1;
+            }
+        };
+
+        if let Some(valves) = &mut self.network.valves {
+            for i in 0..self.valve_count {
+                valves[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
+                k += 1;
             }
         };
     }
@@ -882,7 +873,8 @@ impl<'a> Solver<'a> {
             Some(pumps) => {
                 for i in 0..npmp {
                     // result_a[i+npip][i+npip]= network.pumps[i].alpha*qmax + network.pumps[i].beta + network.pumps[i].gamma/qmax;
-                    result_a[i + npip][i + npip] = pumps[i].get_r_of_q(qmax);
+                    result_a[i + npip][i + npip] =
+                        pumps[i].get_r_of_q(qmax, self.flow_unit_multiplayer);
                 }
             }
         };
@@ -949,6 +941,10 @@ impl<'a> Solver<'a> {
         if let Some(pumps) = &self.network.pumps {
             //update A & B matrices for pipes :
             for i in 0..npmp {
+                let x = pumps[i].alpha;
+                let y = pumps[i].beta;
+                let z = pumps[i].gamma;
+
                 let k = i + npip;
                 _intpart = flowsq[k].abs() / deltaq;
 
@@ -961,19 +957,16 @@ impl<'a> Solver<'a> {
                 _coef_a = f64::trunc(_intpart) * deltaq;
                 _coef_b = _coef_a + deltaq;
 
-                //Updating A (eq13):
+                //Updating A (eq36):
                 // A(i,i) = R(i)*(b(i)^n-a(i)^n)/(b(i)-a(i));
 
                 _intpart = (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
-                a[k][k] = pumps[i].get_r_of_q(flowsq[k]) * _intpart;
+                a[k][k] = -1.0 * (x * _intpart + y);
 
-                //Updating B (eq14):
+                //Updating B (eq37):
 
                 //B(i) = sign(Q(i))*R(i)*((b(i)^n-a(i)^n)/(b(i)-a(i))*a(i)-a(i)^n);
-                b[k] = -1.0
-                    * f64::signum(flowsq[k])
-                    * pumps[i].get_r_of_q(flowsq[k])
-                    * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
+                b[k] = (x * (_intpart * _coef_a - _coef_a.powi(2))) - z;
             }
         }
         /*
