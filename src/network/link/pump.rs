@@ -1,3 +1,5 @@
+use crate::FLOW_EPSILON;
+
 use super::*;
 use serde::{Deserialize, Serialize};
 // ----------------------- Pump -----------------------------
@@ -8,11 +10,22 @@ pub struct Pump {
     pub name: Option<String>,
     pub start: usize,
     pub end: usize,
+
+    /// alpha x Q^2 + beta x Q + gamma.
     pub alpha: f64,
+
+    /// alpha x Q^2 + beta x Q + gamma.
     pub beta: f64,
+
+    /// alpha x Q^2 + beta x Q + gamma.
     pub gamma: f64,
+
+    /// Power rating in KW.
+    pub power_rating: f64,
+
     pub flow: Option<f64>,
-    //velocity : Option<f64>,
+
+    /// Velocity : Option<f64>,
     pub status: LinkStatus,
     pub parameters: Option<String>,
     flow_unit: FlowUnits,
@@ -21,20 +34,38 @@ pub struct Pump {
 impl Pump {
     #[allow(dead_code)]
     fn head_of(&self, flow: f64) -> f64 {
+        //     if self.alpha != 0.0 {
         return self.alpha * flow.powi(2) + self.beta * flow + self.gamma;
+        //    } else {
+        //        return self.power_rating / (9.81 * f64::max(flow.abs(), FLOW_EPSILON));
+        //    }
     }
 
     fn head(&self) -> Option<f64> {
         let _hq = match self.flow {
-            Some(q) => Some(self.alpha * q.powi(2) + self.beta * q + self.gamma),
+            Some(q) => {
+                //   if self.alpha != 0.0 {
+                Some(self.alpha * q.powi(2) + self.beta * q + self.gamma)
+                //   } else {
+                //        Some(self.power_rating / (9.81 * f64::max(q.abs(), FLOW_EPSILON)))
+                //   }
+            }
+
             None => None,
         };
         _hq
     }
 
-    pub fn get_rq(&self, flow: f64) -> f64 {
+    /// Compute the generated head/Q
+    pub fn get_r_of_q(&self, flow: f64) -> f64 {
         if self.status == LinkStatus::Open {
+            // if self.alpha != 0.0 {
             self.alpha * flow + self.beta + (self.gamma / flow)
+            /* } else {
+                let q = f64::max(flow.abs(), FLOW_EPSILON);
+                self.power_rating / (9.81 * q.powi(2))
+            }
+            */
         } else {
             10.00f64.powi(20)
         }
@@ -84,7 +115,7 @@ impl Link for Pump {
 
     fn to_string(&self) -> String {
         format!(
-            "id: {}, name: {:?}, category: {:?} , {}--->{}, alpha: {}, beta: {}, gamma: {}, Q: {:?}, H: {:?}",
+            "id: {}, name: {:?}, category: {:?} , {}--->{}, alpha: {}, beta: {}, gamma: {}, power_rating: {}, Q: {:?}, H: {:?}",
             self.id,
             self.name,
             self.link_type(),
@@ -93,6 +124,7 @@ impl Link for Pump {
             self.alpha,
             self.beta,
             self.gamma,
+            self.power_rating,
             self.flow,
             self.head()
         )
@@ -110,6 +142,7 @@ pub struct PumpBuilder {
     pub alpha: f64,
     pub beta: f64,
     pub gamma: f64,
+    pub power_rating: f64,
     pub status: LinkStatus,
     pub parameters: Option<String>,
     pub flow_unit: FlowUnits,
@@ -155,6 +188,12 @@ impl PumpBuilder {
         self
     }
 
+    /// Set the power rating in KW.
+    pub fn set_power_rating(mut self, power_kw: f64) -> Self {
+        self.gamma = power_kw;
+        self
+    }
+
     pub fn set_status(mut self, status: LinkStatus) -> Self {
         self.status = status;
         self
@@ -179,6 +218,7 @@ impl PumpBuilder {
             alpha: self.alpha,
             beta: self.beta,
             gamma: self.gamma,
+            power_rating: self.power_rating,
             flow: None,
             status: self.status,
             parameters: self.parameters,
@@ -197,6 +237,7 @@ impl Default for PumpBuilder {
             alpha: 0.0,
             beta: 0.0,
             gamma: 0.0,
+            power_rating: 0.0,
             status: LinkStatus::Open,
             parameters: None,
             flow_unit: FlowUnits::default(),

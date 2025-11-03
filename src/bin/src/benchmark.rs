@@ -92,8 +92,8 @@ pub mod benchmark {
     pub fn network4() -> Network {
         let flow_unit: FlowUnits = FlowUnits::Cms;
 
-        let t1 = Tank::new(0, 100.0, 0.0);
-        let t2 = Tank::new(3, 100.0, 0.0);
+        let t1 = Tank::new(0, 50.0, 0.0);
+        let t2 = Tank::new(3, 50.0, 0.0);
         let j1 = JunctionBuilder::new()
             .set_id(1)
             .set_name("J1")
@@ -145,8 +145,8 @@ pub mod benchmark {
             .set_start(3)
             .set_end(2)
             .set_alpha(10.0)
-            .set_beta(20.0)
-            .set_gamma(30.0)
+            .set_beta(-20.0)
+            .set_gamma(50.0)
             .set_status(LinkStatus::Open)
             .build();
 

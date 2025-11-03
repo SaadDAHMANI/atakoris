@@ -197,6 +197,9 @@ impl<'a> Solver<'a> {
 
         // compute delta Q
         let deltaq = qmax / self.m;
+        for i in 0..np {
+            _flowsq[i] = qmax;
+        }
 
         let mut stoploop: bool = false;
 
@@ -454,6 +457,16 @@ impl<'a> Solver<'a> {
         let (npip, npmp, nvlv) = self.link_sizes();
         let no = self.tank_count + self.reservoir_count;
         let np = self.pipe_count + self.pump_count + self.valve_count;
+        // =========================================================
+        println!(
+            "tanks: {}, reservoirs: {}, pipes: {}, pumps: {}, valves: {}",
+            self.tank_count,
+            self.reservoir_count,
+            self.pipe_count,
+            self.pump_count,
+            self.valve_count
+        );
+        // =========================================================
 
         // nodal demand
         let mut q = vec![0.0f64; self.junction_count];
@@ -643,6 +656,11 @@ impl<'a> Solver<'a> {
                 }
             }
         };
+
+        println!("A21: {:?}", _a21);
+        println!("A10 : {:?}", _a10);
+        println!("H0: {:?}", _h0);
+        println!("q = {:?}", q);
 
         (_a21, _a10, _h0, q)
     }
@@ -864,7 +882,7 @@ impl<'a> Solver<'a> {
             Some(pumps) => {
                 for i in 0..npmp {
                     // result_a[i+npip][i+npip]= network.pumps[i].alpha*qmax + network.pumps[i].beta + network.pumps[i].gamma/qmax;
-                    result_a[i + npip][i + npip] = pumps[i].get_rq(qmax);
+                    result_a[i + npip][i + npip] = pumps[i].get_r_of_q(qmax);
                 }
             }
         };
@@ -896,68 +914,94 @@ impl<'a> Solver<'a> {
 
         let (npip, npmp, nvlv) = self.link_sizes();
 
-        match &self.network.pipes {
-            None => {}
-            Some(pipes) => {
-                //update A & B matrices for pipes :
-                for i in 0..npip {
-                    _intpart = flowsq[i].abs() / deltaq;
+        if let Some(pipes) = &self.network.pipes {
+            //update A & B matrices for pipes :
+            for i in 0..npip {
+                _intpart = flowsq[i].abs() / deltaq;
 
-                    #[cfg(feature = "deep_report")]
-                    {
-                        println!("_intpart = {}", _intpart);
-                    }
-
-                    _coef_a = f64::trunc(_intpart) * deltaq;
-                    _coef_b = _coef_a + deltaq;
-
-                    //Updating A (eq13):
-                    // A(i,i) = R(i)*(b(i)^n-a(i)^n)/(b(i)-a(i));
-
-                    _intpart =
-                        (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
-                    a[i][i] = pipes[i].get_r_of_q(flowsq[i]) * _intpart;
-
-                    //Updating B (eq14):
-
-                    //B(i) = sign(Q(i))*R(i)*((b(i)^n-a(i)^n)/(b(i)-a(i))*a(i)-a(i)^n);
-                    b[i] = -1.0
-                        * f64::signum(flowsq[i])
-                        * pipes[i].get_r_of_q(flowsq[i])
-                        * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
-
-                    // println!("P: {}, _intpart = {}, a = {}, b = {}, A = {}, B = {} ", i, _intpart, _coef_a, _coef_b, a[i][i], b[i]);
+                #[cfg(feature = "deep_report")]
+                {
+                    println!("_intpart = {}", _intpart);
                 }
+
+                _coef_a = f64::trunc(_intpart) * deltaq;
+                _coef_b = _coef_a + deltaq;
+
+                //Updating A (eq13):
+                // A(i,i) = R(i)*(b(i)^n-a(i)^n)/(b(i)-a(i));
+
+                _intpart = (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
+                a[i][i] = pipes[i].get_r_of_q(flowsq[i]) * _intpart;
+
+                //Updating B (eq14):
+
+                //B(i) = sign(Q(i))*R(i)*((b(i)^n-a(i)^n)/(b(i)-a(i))*a(i)-a(i)^n);
+                b[i] = -1.0
+                    * f64::signum(flowsq[i])
+                    * pipes[i].get_r_of_q(flowsq[i])
+                    * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
+
+                // println!("P: {}, _intpart = {}, a = {}, b = {}, A = {}, B = {} ", i, _intpart, _coef_a, _coef_b, a[i][i], b[i]);
             }
         };
 
         //update A & B matrices for pumps :
+        if let Some(pumps) = &self.network.pumps {
+            //update A & B matrices for pipes :
+            for i in 0..npmp {
+                let k = i + npip;
+                _intpart = flowsq[k].abs() / deltaq;
 
-        //println!("pump state {:?}, R = {}", network.pumps[0].state, network.pumps[0].get_rq(0.01));
-        match &self.network.pumps {
-            None => {}
-            Some(pumps) => {
-                for i in 0..npmp {
-                    _intpart = flowsq[i + npip] / deltaq;
-                    _coef_a = f64::trunc(_intpart) * deltaq;
-                    _coef_b = f64::trunc(_intpart + f64::signum(flowsq[i + npip])) * deltaq;
-
-                    //Updating A (eq13):
-                    _intpart =
-                        (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
-                    a[i + npip][i + npip] = f64::signum(flowsq[i + npip])
-                        * _intpart
-                        * pumps[i].get_rq(flowsq[i + npip]);
-
-                    //Updating B (eq14):
-                    b[i + npip] = -1.0
-                        * f64::signum(flowsq[i + npip])
-                        * pumps[i].get_rq(flowsq[i + npip])
-                        * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
+                #[cfg(feature = "deep_report")]
+                {
+                    println!("flows Q : {:?}", flowsq);
+                    println!("pumps: _intpart = {}", _intpart);
                 }
-            }
-        };
 
+                _coef_a = f64::trunc(_intpart) * deltaq;
+                _coef_b = _coef_a + deltaq;
+
+                //Updating A (eq13):
+                // A(i,i) = R(i)*(b(i)^n-a(i)^n)/(b(i)-a(i));
+
+                _intpart = (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
+                a[k][k] = pumps[i].get_r_of_q(flowsq[k]) * _intpart;
+
+                //Updating B (eq14):
+
+                //B(i) = sign(Q(i))*R(i)*((b(i)^n-a(i)^n)/(b(i)-a(i))*a(i)-a(i)^n);
+                b[k] = -1.0
+                    * f64::signum(flowsq[k])
+                    * pumps[i].get_r_of_q(flowsq[k])
+                    * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
+            }
+        }
+        /*
+                //println!("pump state {:?}, R = {}", network.pumps[0].state, network.pumps[0].get_rq(0.01));
+                match &self.network.pumps {
+                    None => {}
+                    Some(pumps) => {
+                        for i in 0..npmp {
+                            _intpart = flowsq[i + npip] / deltaq;
+                            _coef_a = f64::trunc(_intpart) * deltaq;
+                            _coef_b = _coef_a + deltaq; // f64::trunc(_intpart + f64::signum(flowsq[i + npip])) * deltaq;
+
+                            //Updating A (eq13):
+                            _intpart =
+                                (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
+                            a[i + npip][i + npip] = f64::signum(flowsq[i + npip])
+                                * _intpart
+                                * pumps[i].get_rq(flowsq[i + npip]);
+
+                            //Updating B (eq14):
+                            b[i + npip] = -1.0
+                                * f64::signum(flowsq[i + npip])
+                                * pumps[i].get_rq(flowsq[i + npip])
+                                * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
+                        }
+                    }
+                };
+        */
         //update A & B matrices for valves :
 
         let _k: usize = npip + npmp;

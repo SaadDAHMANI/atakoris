@@ -37,6 +37,9 @@ pub(crate) const LPS_FACTOR: f64 = 0.001;
 pub(crate) const LPM_FACTOR: f64 = 0.001 / 60.0;
 pub(crate) const CMH_FACTOR: f64 = 1.0 / 3600.0;
 pub(crate) const CMD_FACTOR: f64 = 1.0 / (24.0 * 3600.0);
+
+/// The minimal flow considered as null = 1.0cm3/s.
+pub(crate) const FLOW_EPSILON: f64 = 0.000001;
 // -----------------------------------------------
 include!("options.rs");
 

@@ -72,12 +72,19 @@ pub extern "C" fn free_json_string(s: *mut c_char) {
 pub unsafe extern "C" fn analyse_network(json_net_ptr: *const c_char) -> *mut c_char {
     let mut netw: Network = FfiDto::convert_from_json(json_net_ptr);
     //--------------------------------------------------------------------
-    println!("Rust: solve() fn, recived network : {:?}", netw.title);
-    netw.title = Some(String::from("New title for the network"));
+    println!(
+        "Rust: solve() fn, recived network with : {:?} junctions",
+        netw.junctions
+    );
+    netw.title = Some(String::from(
+        "New title for the network (Renamed by ATAKORIS RUST)",
+    ));
 
     if let Some(ref mut jnctns) = netw.junctions {
         if jnctns.len() > 0 {
-            jnctns[0].elevation = 2123.65;
+            for i in 0..jnctns.len() {
+                jnctns[i].elevation = 123456.789;
+            }
         }
     }
     //--------------------------------------------------------------------
