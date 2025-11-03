@@ -32,7 +32,6 @@ pub struct Pump {
 }
 
 impl Pump {
-    #[allow(dead_code)]
     fn head_of(&mut self, flow: f64, flow_unit_multiplier: f64) -> f64 {
         if flow > FLOW_EPSILON {
             if self.alpha != 0.0 {
@@ -48,7 +47,6 @@ impl Pump {
         }
     }
 
-    #[allow(dead_code)]
     fn head(&self, flow_unit_multiplier: f64) -> Option<f64> {
         let _hq = match self.flow {
             Some(q) => {
@@ -69,7 +67,7 @@ impl Pump {
     }
 
     /// Compute the generated head/Q
-    pub fn get_r_of_q(&self, flow: f64, flow_unit_multiplier: f64) -> f64 {
+    pub fn get_r_of_q0(&self, flow: f64, flow_unit_multiplier: f64) -> f64 {
         if self.status == LinkStatus::Open {
             if self.alpha != 0.0 {
                 self.alpha * (flow / flow_unit_multiplier)

@@ -873,8 +873,7 @@ impl<'a> Solver<'a> {
             Some(pumps) => {
                 for i in 0..npmp {
                     // result_a[i+npip][i+npip]= network.pumps[i].alpha*qmax + network.pumps[i].beta + network.pumps[i].gamma/qmax;
-                    result_a[i + npip][i + npip] =
-                        pumps[i].get_r_of_q(qmax, self.flow_unit_multiplayer);
+                    result_a[i + npip][i + npip] = 1.0; //  pumps[i].get_r_of_q(qmax, self.flow_unit_multiplayer);
                 }
             }
         };
