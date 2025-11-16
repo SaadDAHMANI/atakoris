@@ -382,6 +382,7 @@ impl<'a> Solver<'a> {
         }
 
         self.copy_results(&_headsh, &_flowsq);
+
         self.iterations = Some(iter);
         self.final_error = Some((final_err_q, final_err_h));
 
