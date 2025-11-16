@@ -32,6 +32,7 @@ pub struct Pump {
 }
 
 impl Pump {
+    #[allow(dead_code)]
     fn head_of(&mut self, flow: f64, flow_unit_multiplier: f64) -> f64 {
         if flow > FLOW_EPSILON {
             if self.alpha != 0.0 {
@@ -47,6 +48,7 @@ impl Pump {
         }
     }
 
+    #[allow(dead_code)]
     fn head(&self, flow_unit_multiplier: f64) -> Option<f64> {
         let _hq = match self.flow {
             Some(q) => {

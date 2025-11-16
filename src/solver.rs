@@ -141,7 +141,19 @@ impl<'a> Solver<'a> {
     pub fn get_time_analysis(&self) -> Option<Duration> {
         self.time_analysis
     }
+
+    fn check_network(&self) -> bool {
+        // ========================================================================
+        let no = self.tank_count + self.reservoir_count;
+        let np = self.pipe_count + self.pump_count + self.valve_count;
+        if no == 0 || np == 0 { false } else { true }
+    }
     pub fn compute(&mut self) -> Option<&Network> {
+        // =======================================================================
+        if !self.check_network() {
+            return None;
+        }
+        // ========================================================================
         let chronos = Instant::now();
 
         let (a21, a10, h0, q) = self.get_network();
@@ -449,6 +461,7 @@ impl<'a> Solver<'a> {
         let no = self.tank_count + self.reservoir_count;
         let np = self.pipe_count + self.pump_count + self.valve_count;
         // =========================================================
+        /*
         println!(
             "tanks: {}, reservoirs: {}, pipes: {}, pumps: {}, valves: {}",
             self.tank_count,
@@ -456,7 +469,7 @@ impl<'a> Solver<'a> {
             self.pipe_count,
             self.pump_count,
             self.valve_count
-        );
+        );*/
         // =========================================================
 
         // nodal demand
@@ -647,12 +660,12 @@ impl<'a> Solver<'a> {
                 }
             }
         };
-
-        println!("A21: {:?}", _a21);
-        println!("A10 : {:?}", _a10);
-        println!("H0: {:?}", _h0);
-        println!("q = {:?}", q);
-
+        /*
+                println!("A21: {:?}", _a21);
+                println!("A10 : {:?}", _a10);
+                println!("H0: {:?}", _h0);
+                println!("q = {:?}", q);
+        */
         (_a21, _a10, _h0, q)
     }
 
@@ -870,7 +883,7 @@ impl<'a> Solver<'a> {
         // Pumps resistances
         match &self.network.pumps {
             None => {}
-            Some(pumps) => {
+            Some(_pumps) => {
                 for i in 0..npmp {
                     // result_a[i+npip][i+npip]= network.pumps[i].alpha*qmax + network.pumps[i].beta + network.pumps[i].gamma/qmax;
                     result_a[i + npip][i + npip] = 1.0; //  pumps[i].get_r_of_q(qmax, self.flow_unit_multiplayer);

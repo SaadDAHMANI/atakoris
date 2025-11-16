@@ -29,6 +29,7 @@ static WDN: Lazy<Network> = Lazy::new(|| {
     match Network::read_from_file(
         "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Hanoi_optimal.inp",
         // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Modena.inp",
+        // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Combined_Gravity_WDN.inp",
     ) {
         Ok(wdn) => wdn,
         Err(eror) => panic!("Cannot read the file because of : {}", eror),
@@ -43,12 +44,12 @@ fn main() {
     println!("_________________________________________________________________________________");
 
     println!("--------- RUN : {} -----------", RUN);
-    // show_static_wdn();
+    show_static_wdn();
 
     // test_network3();
     // test_network1_todini();
     // test_network2_todini();
-    test_network4();
+    // test_network4();
     // test_modena_net();
     // test_2loop_network();
 }
