@@ -37,14 +37,19 @@ static WDN: Lazy<Network> = Lazy::new(|| {
 });
 //--------------------------------------------
 
-const RUN: usize = 0;
-
 fn main() {
     println!("Atakor : a Water Distribution Networks Analyser in Rust programming language.");
     println!("_________________________________________________________________________________");
 
-    println!("--------- RUN : {} -----------", RUN);
-    show_static_wdn();
+    let v = vec![1, 2, 3, 4, 5];
+
+    let x: Option<Vec<usize>> = Some(v);
+
+    let count = x.as_ref().map_or(0, |vales| vales.len());
+
+    println!("Count = {}", count);
+
+    //  show_static_wdn();
 
     // test_network3();
     // test_network1_todini();

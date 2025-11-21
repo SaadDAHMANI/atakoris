@@ -2,6 +2,8 @@ pub mod graph;
 pub mod network;
 pub mod parsers;
 pub mod solver;
+pub mod solver2;
+
 //-------------- FFI using data transfer objects DTO (using Json)-------
 pub mod ffi_dto;
 //use data_transfer_objects::JunctionDto;
@@ -15,6 +17,7 @@ pub mod ffi_dto;
 pub use network::*;
 pub use parsers::inpfileparser::InpFileParser;
 pub use solver::Solver;
+pub use solver2::Solver2;
 
 #[cfg(test)]
 mod tests {
