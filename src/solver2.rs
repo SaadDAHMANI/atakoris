@@ -21,7 +21,6 @@ use crate::{AFD_FACTOR, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, network:
 use super::network::Network;
 
 pub struct Solver2 {
-    flow_unit_multiplayer: f64,
     ///
     /// non-zero & strict positive m-value. Default value : m = 100.
     ///
@@ -39,55 +38,20 @@ impl Solver2 {
     ///
     /// objective_error : minimal error flow and head computation (stopping criterion). If None, the default value (objective_error = 0.001) will be used.
     ///
-    pub fn new(wdn: &mut Network, objective_error: Option<f64>) -> Self {
-        let njunction: usize = match &wdn.junctions {
-            None => 0,
-            Some(items) => items.len(),
-        };
-
-        let ntank: usize = match &wdn.tanks {
-            None => 0,
-            Some(items) => items.len(),
-        };
-
-        let nreservoir: usize = match &wdn.reservoirs {
-            None => 0,
-            Some(items) => items.len(),
-        };
-
-        let npipe: usize = match &wdn.pipes {
-            None => 0,
-            Some(items) => items.len(),
-        };
-
-        let npump: usize = match &wdn.pumps {
-            None => 0,
-            Some(items) => items.len(),
-        };
-        let nvalve: usize = match &wdn.valves {
-            None => 0,
-            Some(items) => items.len(),
-        };
-
+    pub fn new(objective_error: Option<f64>) -> Self {
         let obj_err: f64 = match objective_error {
-            None => 0.001,
-            Some(objerr) => objerr,
+            None => 0.0001,
+            Some(objerr) => f64::max(objerr, 0.00000000001),
         };
 
-        let flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(&wdn);
-
-        let solver = Solver2 {
-            m: 100.0f64,
+        Solver2 {
+            m: 1000.0f64,
             n: 1.852f64,
             iterations: None,
             final_error: None,
             objective_error: obj_err,
             time_analysis: None,
-            flow_unit_multiplayer,
-        };
-        //solver.convert_2is();
-        //
-        solver
+        }
     }
 
     ///
@@ -120,277 +84,285 @@ impl Solver2 {
         self.time_analysis
     }
 
-    pub fn compute(&self, network: &mut Network) {
+    pub fn compute(&mut self, network: &mut Network) {
         let chronos = Instant::now();
 
-        let (a21, a10, h0, q) = self.get_network(&network);
+        let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
+        // let tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
+        // let reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
 
-        let nn = a21.len();
-        let np = a21[0].len();
+        let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
+        let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
+        let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
 
-        // let npip : usize = self.pipes.len();
-        // let npump : usize = self.pumps.len();
-        // let nvlv : usize = self.valves.len();
+        if let Some((a21, a10, h0, q)) = &self.get_network(&network) {
+            let flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(&network);
 
-        if nn < 2 {
-            panic!("No nodes !!!");
-        } // return Option::None;}
-        if np < 1 {
-            panic!("No pipes !!!");
-        } //return Option::None;}
+            let nn = a21.len();
+            let np = a21[0].len();
 
-        let mut iter: usize = 0;
-        let itermax: usize = 20;
-        let objective_err: f64 = self.objective_error;
-        let mut final_err_q: f64 = f64::MAX;
-        let mut final_err_h: f64 = f64::MAX;
+            // let npip : usize = self.pipes.len();
+            // let npump : usize = self.pumps.len();
+            // let nvlv : usize = self.valves.len();
 
-        let mut _a: Vec<Vec<f64>> = self.initilize_a_matrix(); // = vec![vec![0.0f64; np]; np]; //A
-        let mut _b = vec![0.0f64; np]; // B
-        let mut _c = vec![0.0f64; np];
-        let mut _flowsq = vec![0.0f64; np];
-        let mut _previous_q = vec![0.0f64; np];
-        let mut _headsh = vec![0.0f64; nn];
-        let mut _previous_h = vec![0.0f64; nn];
+            if nn < 2 {
+                panic!("No nodes !!!");
+            } // return Option::None;}
+            if np < 1 {
+                panic!("No pipes !!!");
+            } //return Option::None;}
 
-        let mut _coef_a = vec![0.0f64; np]; // ai
-        let mut _coef_b = vec![0.0f64; np]; //bi
+            let mut iter: usize = 0;
+            let itermax: usize = 20;
+            let objective_err: f64 = self.objective_error;
+            let mut final_err_q: f64 = f64::MAX;
+            let mut final_err_h: f64 = f64::MAX;
 
-        //let m : f64 = 100.0;
-        //let n : f64 = 1.852; //2.0;
+            let mut _a: Vec<Vec<f64>> = self.initilize_a_matrix(); // = vec![vec![0.0f64; np]; np]; //A
+            let mut _b = vec![0.0f64; np]; // B
+            let mut _c = vec![0.0f64; np];
+            let mut _flowsq = vec![0.0f64; np];
+            let mut _previous_q = vec![0.0f64; np];
+            let mut _headsh = vec![0.0f64; nn];
+            let mut _previous_h = vec![0.0f64; nn];
 
-        let _a12 = Self::transpose(&a21);
+            let mut _coef_a = vec![0.0f64; np]; // ai
+            let mut _coef_b = vec![0.0f64; np]; //bi
 
-        #[cfg(feature = "deep_report")]
-        {
-            Self::print(&a21, &"A21");
-            Self::print(&_a12, &"A12");
-        }
+            //let m : f64 = 100.0;
+            //let n : f64 = 1.852; //2.0;
 
-        // step 0 : compute Qmax
-        let qmax: f64 = q.iter().sum();
-        /*
-        for i in 0..q.len() {
-           qmax+=q[i];
-        } */
-
-        // compute delta Q
-        let deltaq = qmax / self.m;
-        for i in 0..np {
-            _flowsq[i] = qmax;
-        }
-
-        let mut stoploop: bool = false;
-
-        while stoploop == false {
-            #[cfg(feature = "report")]
-            {
-                println!("-----------------------------> iter : {}", iter);
-            }
+            let _a12 = Self::transpose(&a21);
 
             #[cfg(feature = "deep_report")]
             {
-                Solver::print(&_a, &"[A]0");
-                Solver::print_vector(&_b, &"[B]0");
+                Self::print(&a21, &"A21");
+                Self::print(&_a12, &"A12");
             }
 
-            //Updating A (eq13) & B (eq14):
-            self.update_matrices_a_b(&mut _a, &mut _b, &_flowsq, deltaq, self.n);
+            // step 0 : compute Qmax
+            let qmax: f64 = q.iter().sum();
+            /*
+            for i in 0..q.len() {
+               qmax+=q[i];
+            } */
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&_a, &String::from("[A]"));
-                Solver::print_vector(&_b, &"[B]");
-            }
-
-            // Step 2 : Compute V (eq) and C
-            // Compute V:
-            let inva = Solver::invers_diagonal(&_a);
-            let inva = match inva {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with inverse diagonal matrix : {:?}", error),
-            };
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&inva, "[A-]");
-            }
-
-            let _v1 = Solver::product(&a21, &inva);
-            let _v1 = match _v1 {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with product matrices : {:?}", error),
-            };
-
-            let _v = Solver::product(&_v1, &_a12);
-            let _v = match _v {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with product matrices : {:?}", error),
-            };
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&_v, "[V]");
-            }
-
-            //Compute C:
-            let _tmpc = Solver::product2(&a10, &h0);
-            let tmpc = match _tmpc {
-                Ok(vectr) => vectr,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
-
+            // compute delta Q
+            let deltaq = qmax / self.m;
             for i in 0..np {
-                _c[i] = (-1.0 * _b[i]) - tmpc[i];
+                _flowsq[i] = qmax;
             }
 
-            //print_vector(&_c, "C : ");
+            let mut stoploop: bool = false;
 
-            // Step 3 : Compute H (eq.29)
-            let invv = Solver::invers(&_v);
+            while stoploop == false {
+                #[cfg(feature = "report")]
+                {
+                    println!("-----------------------------> iter : {}", iter);
+                }
 
-            let invv = match invv {
-                Ok(matrix) => matrix,
-                Err(error) => panic!("Problem with inverse matrix : {:?}", error),
-            };
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print(&_a, &"[A]0");
+                    Solver::print_vector(&_b, &"[B]0");
+                }
 
-            let tmp = Solver::product2(&_v1, &_c);
+                //Updating A (eq13) & B (eq14):
+                self.update_matrices_a_b(&mut _a, &mut _b, &_flowsq, deltaq, self.n);
 
-            let mut tmp = match tmp {
-                Ok(vectr) => vectr,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print(&_a, &String::from("[A]"));
+                    Solver::print_vector(&_b, &"[B]");
+                }
 
-            for i in 0..nn {
-                tmp[i] -= q[i];
+                // Step 2 : Compute V (eq) and C
+                // Compute V:
+                let inva = Solver2::invers_diagonal(&_a);
+                let inva = match inva {
+                    Ok(matrx) => matrx,
+                    Err(error) => panic!("Problem with inverse diagonal matrix : {:?}", error),
+                };
+
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print(&inva, "[A-]");
+                }
+
+                let _v1 = Solver2::product(&a21, &inva);
+                let _v1 = match _v1 {
+                    Ok(matrx) => matrx,
+                    Err(error) => panic!("Problem with product matrices : {:?}", error),
+                };
+
+                let _v = Solver2::product(&_v1, &_a12);
+                let _v = match _v {
+                    Ok(matrx) => matrx,
+                    Err(error) => panic!("Problem with product matrices : {:?}", error),
+                };
+
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print(&_v, "[V]");
+                }
+
+                //Compute C:
+                let _tmpc = Solver2::product2(&a10, &h0);
+                let tmpc = match _tmpc {
+                    Ok(vectr) => vectr,
+                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+                };
+
+                for i in 0..np {
+                    _c[i] = (-1.0 * _b[i]) - tmpc[i];
+                }
+
+                //print_vector(&_c, "C : ");
+
+                // Step 3 : Compute H (eq.29)
+                let invv = Solver2::invers(&_v);
+
+                let invv = match invv {
+                    Ok(matrix) => matrix,
+                    Err(error) => panic!("Problem with inverse matrix : {:?}", error),
+                };
+
+                let tmp = Solver2::product2(&_v1, &_c);
+
+                let mut tmp = match tmp {
+                    Ok(vectr) => vectr,
+                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+                };
+
+                for i in 0..nn {
+                    tmp[i] -= q[i];
+                }
+
+                let _h = Solver2::product2(&invv, &tmp);
+                _headsh = match _h {
+                    Ok(vect) => vect,
+                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+                };
+
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print_vector(&_headsh, "[H] :");
+                }
+                // Step 4 : Compute flowws Q (eq30)
+                let tmpql = Solver2::product2(&inva, &_c);
+                let tmpql = match tmpql {
+                    Ok(vect) => vect,
+                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+                };
+
+                let tmpqm = Solver2::product(&inva, &_a12);
+                let tmpqm = match tmpqm {
+                    Ok(matrx) => matrx,
+                    Err(error) => panic!("Problem with matrix multiplication : {:?}", error),
+                };
+
+                let tmpqr = Solver2::product2(&tmpqm, &_headsh);
+                let tmpqr = match tmpqr {
+                    Ok(vect) => vect,
+                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+                };
+
+                for i in 0..np {
+                    _flowsq[i] = tmpql[i] - tmpqr[i];
+                }
+
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print_vector(&_flowsq, "[Q]");
+                }
+
+                #[cfg(feature = "deep_report")]
+                {
+                    Solver::print(&tmpqm, &String::from("At-1 x A12"));
+                }
+
+                //Check convergence :
+                let check_q_err = Solver2::check_convergence(&_flowsq, &_previous_q, objective_err);
+                match check_q_err.0 {
+                    false => stoploop = false,
+                    true => {
+                        let check_h_err =
+                            Solver2::check_convergence(&_headsh, &_previous_h, objective_err);
+                        final_err_h = check_h_err.1;
+                        // match check_h_err.0 {
+                        //     false => stoploop = false,
+                        //     true => stoploop = true,
+                        //  };
+                        stoploop = check_h_err.0;
+                    }
+                };
+
+                final_err_q = check_q_err.1;
+
+                //Copy data
+                for i in 0..np {
+                    _previous_q[i] = _flowsq[i];
+                }
+
+                for j in 0..nn {
+                    _previous_h[j] = _headsh[j];
+                }
+
+                iter += 1;
+
+                if iter >= itermax {
+                    stoploop = true;
+                }
+
+                #[cfg(feature = "report")]
+                {
+                    Solver::print_vector(&_flowsq, "[Qs]");
+                    Solver::print_vector(&_headsh, "[Hs]");
+                }
             }
 
-            let _h = Solver::product2(&invv, &tmp);
-            _headsh = match _h {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            // ========================   Solver2::copy_results(&mut network, &_headsh, &_flowsq); ===============
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print_vector(&_headsh, "[H] :");
-            }
-            // Step 4 : Compute flowws Q (eq30)
-            let tmpql = Solver::product2(&inva, &_c);
-            let tmpql = match tmpql {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
-
-            let tmpqm = Solver::product(&inva, &_a12);
-            let tmpqm = match tmpqm {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with matrix multiplication : {:?}", error),
-            };
-
-            let tmpqr = Solver::product2(&tmpqm, &_headsh);
-            let tmpqr = match tmpqr {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
-
-            for i in 0..np {
-                _flowsq[i] = tmpql[i] - tmpqr[i];
-            }
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print_vector(&_flowsq, "[Q]");
-            }
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&tmpqm, &String::from("At-1 x A12"));
-            }
-
-            //Check convergence :
-            let check_q_err = Solver::check_convergence(&_flowsq, &_previous_q, objective_err);
-            match check_q_err.0 {
-                false => stoploop = false,
-                true => {
-                    let check_h_err =
-                        Solver::check_convergence(&_headsh, &_previous_h, objective_err);
-                    final_err_h = check_h_err.1;
-                    // match check_h_err.0 {
-                    //     false => stoploop = false,
-                    //     true => stoploop = true,
-                    //  };
-                    stoploop = check_h_err.0;
+            if let Some(junctions) = &mut network.junctions {
+                for i in 0..junction_count {
+                    junctions[i].head = Some(_headsh[i]);
                 }
             };
 
-            final_err_q = check_q_err.1;
+            if let Some(pipes) = &mut network.pipes {
+                for i in 0..pipe_count {
+                    pipes[i].flow = Some(_flowsq[i] / flow_unit_multiplayer);
+                }
+            };
 
-            //Copy data
-            for i in 0..np {
-                _previous_q[i] = _flowsq[i];
-            }
+            let mut k: usize = pipe_count;
 
-            for j in 0..nn {
-                _previous_h[j] = _headsh[j];
-            }
+            if let Some(pumps) = &mut network.pumps {
+                for i in 0..pump_count {
+                    pumps[i].flow = Some(_flowsq[k] / flow_unit_multiplayer);
+                    k += 1;
+                }
+            };
 
-            iter += 1;
+            if let Some(valves) = &mut network.valves {
+                for i in 0..valve_count {
+                    valves[i].flow = Some(_flowsq[k] / flow_unit_multiplayer);
+                    k += 1;
+                }
+            };
+            // ====================================================================
+            // self.iterations = Some(iter);
+            // self.final_error = Some((final_err_q, final_err_h));
 
-            if iter >= itermax {
-                stoploop = true;
-            }
-
-            #[cfg(feature = "report")]
-            {
-                Solver::print_vector(&_flowsq, "[Qs]");
-                Solver::print_vector(&_headsh, "[Hs]");
-            }
+            // self.time_analysis = Some(chronos.elapsed());
         }
-
-        self.copy_results(&_headsh, &_flowsq);
-
-        self.iterations = Some(iter);
-        self.final_error = Some((final_err_q, final_err_h));
-
-        self.time_analysis = Some(chronos.elapsed());
         /*  let wdn = NetworkBuilder::new()
         .set_junctions(Some(self.junctions.clone()))
         .set_pipes(Some(self.pipes.clone()))
         .set_pumps(Some(self.pumps.clone()))
         .set_valves(Some(self.valves.clone()))
         .build();  */
-        Some(&self.network)
-    }
-
-    fn copy_results(&mut self, heads_h: &[f64], flows_q: &[f64]) {
-        if let Some(junctions) = &mut self.network.junctions {
-            for i in 0..self.junction_count {
-                junctions[i].head = Some(heads_h[i]);
-            }
-        };
-
-        if let Some(pipes) = &mut self.network.pipes {
-            for i in 0..self.pipe_count {
-                pipes[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
-            }
-        };
-
-        let mut k: usize = self.pipe_count;
-
-        if let Some(pumps) = &mut self.network.pumps {
-            for i in 0..self.pump_count {
-                pumps[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
-                k += 1;
-            }
-        };
-
-        if let Some(valves) = &mut self.network.valves {
-            for i in 0..self.valve_count {
-                valves[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
-                k += 1;
-            }
-        };
+        // Some(&self.network)
     }
 
     ///
@@ -419,7 +391,7 @@ impl Solver2 {
     /// Get network matrices
     ///
     fn get_network(
-        &self,
+        &mut self,
         network: &Network,
     ) -> Option<(Vec<Vec<f64>>, Vec<Vec<f64>>, Vec<f64>, Vec<f64>)> {
         let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
@@ -429,13 +401,19 @@ impl Solver2 {
         let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
         let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
         let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
+
         let no = tank_count + reservoir_count;
+
+        let pipes_pumps = pipe_count + pump_count;
+
+        // number of pipes + pumps + valves
         let np = pipe_count + pump_count + valve_count;
 
         if no == 0 || np == 0 {
             return None;
         }
 
+        let flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
         // =========================================================
         /*
         println!(
@@ -474,12 +452,14 @@ impl Solver2 {
             if let Some(pumps) = network.pumps.as_ref() {
                 for i in 0..junction_count {
                     // Pumps :
-                    for k in 0..pump_count {
-                        if pumps[k].start == junctions[i].id {
-                            _a21[i][k + pipe_count] = -1.0;
-                        } else if pumps[k].end == junctions[i].id {
-                            _a21[i][k + pipe_count] = 1.0;
+                    let mut j = 0;
+                    for k in pipe_count..pipes_pumps {
+                        if pumps[j].start == junctions[i].id {
+                            _a21[i][k] = -1.0;
+                        } else if pumps[j].end == junctions[i].id {
+                            _a21[i][k] = 1.0;
                         }
+                        j += 1;
                     }
                 }
             };
@@ -487,12 +467,14 @@ impl Solver2 {
             if let Some(valves) = network.valves.as_ref() {
                 for i in 0..junction_count {
                     // Valves :
-                    for k in 0..valve_count {
-                        if valves[k].start == junctions[i].id {
-                            _a21[i][k + pipe_count + pump_count] = -1.0;
-                        } else if valves[k].end == junctions[i].id {
-                            _a21[i][k + pipe_count + pump_count] = 1.0;
+                    let mut j: usize = 0;
+                    for k in pipes_pumps..np {
+                        if valves[j].start == junctions[i].id {
+                            _a21[i][k] = -1.0;
+                        } else if valves[j].end == junctions[i].id {
+                            _a21[i][k] = 1.0;
                         }
+                        j += 1;
                     }
                 }
             }
@@ -501,7 +483,7 @@ impl Solver2 {
 
             //nodal demand
             for i in 0..junction_count {
-                q[i] = junctions[i].demand * self.flow_unit_multiplayer;
+                q[i] = junctions[i].demand * flow_unit_multiplayer;
             }
             //
         };
@@ -510,6 +492,10 @@ impl Solver2 {
         let mut _a10 = vec![vec![0.0f64; no]; np];
 
         if let Some(tanks) = network.tanks.as_ref() {
+            //Fixed head
+            for k in 0..tank_count {
+                _h0[k] = tanks[k].head();
+            }
             //-------------------tanks - pipes ----------------
             if let Some(pipes) = network.pipes.as_ref() {
                 for j in 0..tank_count {
@@ -528,121 +514,104 @@ impl Solver2 {
             if let Some(pumps) = network.pumps.as_ref() {
                 for j in 0..tank_count {
                     // Tanks - Pumps
-                    for i in pipe_count..pump_count + pipe_count {
-                        if pumps[i].start == tanks[j].id {
+                    let mut k: usize = 0;
+
+                    for i in pipe_count..pipes_pumps {
+                        if pumps[k].start == tanks[j].id {
                             _a10[i][j] = -1.0;
-                        } else if pumps[i].end == tanks[j].id {
+                        } else if pumps[k].end == tanks[j].id {
                             _a10[i][j] = 1.0;
-                        }
+                        };
+
+                        k += 1;
+                    }
+                }
+            };
+
+            if let Some(valves) = network.valves.as_ref() {
+                for j in 0..tank_count {
+                    // Tanks - Valves
+                    let mut k: usize = 0;
+
+                    for i in pipes_pumps..np {
+                        if valves[k].start == tanks[j].id {
+                            _a10[i][j] = -1.0;
+                        } else if valves[k].end == tanks[j].id {
+                            _a10[i][j] = 1.0;
+                        };
+
+                        k += 1;
                     }
                 }
             }
         }
 
-        // Tanks
-        match &network.tanks {
-            None => {}
-            Some(tanks) => {
-                //pipes
+        if let Some(reservoirs) = network.reservoirs.as_ref() {
+            //
+            //Fixed head
+            for k in 0..reservoir_count {
+                _h0[k + tank_count] = reservoirs[k].head;
+            }
 
-                match &network.pumps {
-                    None => {}
-                    Some(pumps) => {
-                        for j in 0..tank_count {
-                            // Tanks - Pumps
-                            for i in 0..pump_count {
-                                if pumps[i].start == tanks[j].id {
-                                    _a10[i + pipe_count][j] = -1.0;
-                                } else if pumps[i].end == tanks[j].id {
-                                    _a10[i + pipe_count][j] = 1.0;
-                                }
-                            }
-                        }
-                    }
-                };
+            //-----------------Pipes ------------------------
+            if let Some(pipes) = network.pipes.as_ref() {
+                for j in tank_count..no {
+                    // Reservoirs - Pipes
+                    let mut k: usize = 0;
+                    for i in 0..pipe_count {
+                        if pipes[i].start == reservoirs[k].id {
+                            _a10[i][j] = -1.0;
+                        } else if pipes[i].end == reservoirs[k].id {
+                            _a10[i][j] = 1.0;
+                        };
 
-                match &network.valves {
-                    None => {}
-                    Some(valves) => {
-                        for j in 0..tank_count {
-                            // Tanks - Valves
-                            for i in 0..valve_count {
-                                if valves[i].start == tanks[j].id {
-                                    _a10[i + pipe_count + pump_count][j] = -1.0;
-                                } else if valves[i].end == tanks[j].id {
-                                    _a10[i + pipe_count + pump_count][j] = 1.0;
-                                }
-                            }
-                        }
+                        k += 1;
                     }
-                };
-                //Fixed head
-                for k in 0..tank_count {
-                    _h0[k] = tanks[k].head();
+                }
+            };
+            // ---------------- pumps ----------------------
+            if let Some(pumps) = network.pumps.as_ref() {
+                let mut kj: usize = 0;
+
+                for j in tank_count..no {
+                    // Reservoirs - Pumps
+                    let mut ki: usize = 0;
+
+                    for i in pipe_count..pipes_pumps {
+                        if pumps[ki].start == reservoirs[kj].id {
+                            _a10[i][j] = -1.0;
+                        } else if pumps[ki].end == reservoirs[kj].id {
+                            _a10[i][j] = 1.0;
+                        };
+
+                        ki += 1;
+                    }
+                    kj += 1;
+                }
+            };
+
+            //------------------ valves ----------------------
+            if let Some(valves) = network.valves.as_ref() {
+                let mut kj: usize = 0;
+
+                for j in tank_count..no {
+                    // Reservoirs - Valves
+                    let mut ki: usize = 0;
+
+                    for i in pipes_pumps..np {
+                        if valves[ki].start == reservoirs[kj].id {
+                            _a10[i][j] = -1.0;
+                        } else if valves[ki].end == reservoirs[kj].id {
+                            _a10[i][j] = 1.0;
+                        };
+
+                        ki += 1;
+                    }
+
+                    kj += 1;
                 }
             }
-        };
-
-        // Reservoirs
-        match &network.reservoirs {
-            None => {}
-            Some(reservoirs) => {
-                // Pipes
-                match &network.pipes {
-                    None => {}
-                    Some(pipes) => {
-                        for j in 0..reservoir_count {
-                            // Reservoirs - Pipes
-                            for i in 0..pipe_count {
-                                if pipes[i].start == reservoirs[j].id {
-                                    _a10[i][j + tank_count] = -1.0;
-                                } else if pipes[i].end == reservoirs[j].id {
-                                    _a10[i][j + tank_count] = 1.0;
-                                }
-                            }
-                        }
-                    }
-                };
-
-                // Pumps
-                match &network.pumps {
-                    None => {}
-                    Some(pumps) => {
-                        for j in 0..reservoir_count {
-                            // Reservoirs - Pumps
-                            for i in 0..pump_count {
-                                if pumps[i].start == reservoirs[j].id {
-                                    _a10[i + pipe_count][j + tank_count] = -1.0;
-                                } else if pumps[i].end == reservoirs[j].id {
-                                    _a10[i + pipe_count][j + tank_count] = 1.0;
-                                }
-                            }
-                        }
-                    }
-                };
-
-                // Valves
-                match &network.valves {
-                    None => {}
-                    Some(valves) => {
-                        for j in 0..reservoir_count {
-                            // Reservoirs - Valves
-                            for i in 0..valve_count {
-                                if valves[i].start == reservoirs[j].id {
-                                    _a10[i + pipe_count + pump_count][j + tank_count] = -1.0;
-                                } else if valves[i].end == reservoirs[j].id {
-                                    _a10[i + pipe_count + pump_count][j + tank_count] = 1.0;
-                                }
-                            }
-                        }
-                    }
-                };
-                //Fixed head
-                for k in 0..reservoir_count {
-                    _h0[k + tank_count] = reservoirs[k].head;
-                }
-            }
-        };
+        }
         /*
                 println!("A21: {:?}", _a21);
                 println!("A10 : {:?}", _a10);
@@ -694,7 +663,7 @@ impl Solver2 {
         //    Ok(inversed)
         // }
 
-        Solver::inverse_matrix_jordan(&matrix)
+        Solver2::inverse_matrix_jordan(&matrix)
     }
 
     fn inverse_matrix_jordan(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, String> {
@@ -829,7 +798,7 @@ impl Solver2 {
         }
     }
 
-    fn initilize_a_matrix(&self) -> Vec<Vec<f64>> {
+    fn initilize_a_matrix(network: &Network) -> Vec<Vec<f64>> {
         // let self.junction_count : usize = match self.junctions {
         //     Some(junctions) => junctions.len(),
         //     None => 0,
@@ -844,16 +813,16 @@ impl Solver2 {
         //     Some(reservoirs) => reservoirs.len(),
         //     None => 0,
         // };
-        let (npip, npmp, nvlv) = self.link_sizes();
+        let (npip, npmp, nvlv) = Solver2::links_cont(network);
 
         let np = npip + npmp + nvlv;
 
         let mut result_a = vec![vec![0.0f64; np]; np];
 
         //let np = npip+npmp;
-        let rspipes = self.network.get_pipes_resistances().unwrap();
+        let rspipes = network.get_pipes_resistances().unwrap();
 
-        let qmax = match &self.network.junctions {
+        let qmax = match &network.junctions {
             None => 0.0f64,
             Some(junctions) => junctions.iter().fold(0.0f64, |acc, j| acc + j.demand),
         };
@@ -864,7 +833,7 @@ impl Solver2 {
         }
 
         // Pumps resistances
-        match &self.network.pumps {
+        match &network.pumps {
             None => {}
             Some(_pumps) => {
                 for i in 0..npmp {
@@ -875,7 +844,7 @@ impl Solver2 {
         };
 
         // Valves resistances
-        match &self.network.valves {
+        match &network.valves {
             None => {}
             Some(valves) => {
                 for i in 0..nvlv {
@@ -887,8 +856,22 @@ impl Solver2 {
         result_a
     }
 
+    fn links_cont(network: &Network) -> (usize, usize, usize) {
+        let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
+        let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
+        let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
+        (pipe_count, pump_count, valve_count)
+    }
+
+    fn nodes_count(network: &Network) -> (usize, usize, usize) {
+        let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
+        let tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
+        let reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
+        (junction_count, tank_count, reservoir_count)
+    }
+
     fn update_matrices_a_b(
-        &self,
+        network: &Network,
         a: &mut Vec<Vec<f64>>,
         b: &mut Vec<f64>,
         flowsq: &Vec<f64>,
@@ -899,9 +882,9 @@ impl Solver2 {
         let mut _coef_a: f64 = 0.0;
         let mut _coef_b: f64 = 0.0;
 
-        let (npip, npmp, nvlv) = self.link_sizes();
+        let (npip, npmp, nvlv) = Solver2::links_cont(network);
 
-        if let Some(pipes) = &self.network.pipes {
+        if let Some(pipes) = &network.pipes {
             //update A & B matrices for pipes :
             for i in 0..npip {
                 _intpart = flowsq[i].abs() / deltaq;
@@ -933,7 +916,7 @@ impl Solver2 {
         };
 
         //update A & B matrices for pumps :
-        if let Some(pumps) = &self.network.pumps {
+        if let Some(pumps) = &network.pumps {
             //update A & B matrices for pipes :
             for i in 0..npmp {
                 let x = pumps[i].alpha;
@@ -994,7 +977,7 @@ impl Solver2 {
 
         let _k: usize = npip + npmp;
 
-        match &self.network.valves {
+        match &network.valves {
             None => {}
             Some(valves) => {
                 for i in 0..nvlv {
