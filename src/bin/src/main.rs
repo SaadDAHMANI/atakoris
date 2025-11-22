@@ -1,6 +1,6 @@
 //include!("benchmark.rs");
 
-use atakoris::ffi_dto::*;
+use atakoris::{Solver2, ffi_dto::*};
 
 use atakoris::network::Network;
 /* use std::fs::File;
@@ -40,15 +40,10 @@ static WDN: Lazy<Network> = Lazy::new(|| {
 fn main() {
     println!("Atakor : a Water Distribution Networks Analyser in Rust programming language.");
     println!("_________________________________________________________________________________");
-
-    let v = vec![1, 2, 3, 4, 5];
-
-    let x: Option<Vec<usize>> = Some(v);
-
-    let count = x.as_ref().map_or(0, |vales| vales.len());
-
-    println!("Count = {}", count);
-
+    solver1_test_network2_todini();
+    println!("========================");
+    solver2_test_network2_todini();
+    //------------------------------------------------
     //  show_static_wdn();
 
     // test_network3();
@@ -299,12 +294,52 @@ fn test_network1_todini() {
 }
 
 #[allow(dead_code)]
-fn test_network2_todini() {
+fn solver2_test_network2_todini() {
     let mut net: Network = network2_todini();
-    let mut solver: Solver = Solver::new(&mut net, None);
+    let m = Some(1000.0f64);
+    let target_err = Some(0.00001f64);
+
+    let mut solver: Solver2 = Solver2::new(m, target_err);
+
+    match solver.compute(&mut net) {
+        Err(the_err) => println!("{}", the_err),
+        Ok(result) => println!(
+            "Solver2 => Q_error : {:?}; \n H_error : {:?}; \n Iterations : {:?}, Time: {:?}",
+            result.final_flow_error,
+            result.final_head_error,
+            result.iterations,
+            result.time_analysis
+        ),
+    };
+
+    match &net.junctions {
+        None => println!("no junctions !!!"),
+        Some(nodes) => {
+            for jn in nodes.iter() {
+                println!("{}", jn.to_string())
+            }
+        }
+    };
+
+    match &net.pipes {
+        None => println!("no pipes !!!"),
+        Some(pipes) => {
+            for elm in pipes.iter() {
+                println!("{}", elm.to_string())
+            }
+        }
+    };
+}
+
+#[allow(dead_code)]
+fn solver1_test_network2_todini() {
+    let mut net: Network = network2_todini();
+    let target_err = Some(0.00001);
+
+    let mut solver: Solver = Solver::new(&mut net, target_err);
 
     // change the m value.
-    solver.set_m_parameter(100.0f64);
+    solver.set_m_parameter(1000.0f64);
 
     use std::time::Instant;
     let now = Instant::now();
@@ -316,10 +351,11 @@ fn test_network2_todini() {
 
     let (erq, erh) = solver.get_final_errors().unwrap();
     println!(
-        "Q_error : {:?}; \n H_error : {:?}; \n Iterations : {:?}",
+        "Solver1 => Q_error : {:?}; \n H_error : {:?}; \n Iterations : {:?}, Time : {:?}",
         erq,
         erh,
-        solver.get_final_iterations()
+        solver.get_final_iterations(),
+        solver.get_time_analysis()
     );
 
     /* match result {
@@ -560,7 +596,7 @@ fn test_modena_net() {
 }
 
 #[allow(dead_code)]
-fn test_2loop_network() {
+fn solver1_test_2loop_network() {
     let mut net: Network = network_2loop();
 
     let mut solver: Solver = Solver::new(&mut net, Some(0.00001));
@@ -570,7 +606,7 @@ fn test_2loop_network() {
 
     let (erq, erh) = solver.get_final_errors().unwrap();
     println!(
-        "Q_error : {:?}; \n H_error : {:?}; \n Iterations : {:?}",
+        "Solver 1 => Q_error : {:?}; \n H_error : {:?}; \n Iterations : {:?}",
         erq,
         erh,
         solver.get_final_iterations()

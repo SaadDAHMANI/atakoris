@@ -216,7 +216,7 @@ pub mod benchmark {
             .set_start(1)
             .set_end(2)
             .set_length(1000.0)
-            .set_diameter(0.40)
+            .set_diameter(400.0)
             .set_roughness(130.0)
             .set_minorloss(0.0)
             .set_status(LinkStatus::Open)
@@ -229,7 +229,7 @@ pub mod benchmark {
             .set_start(2)
             .set_end(3)
             .set_length(1000.0)
-            .set_diameter(0.350)
+            .set_diameter(350.0)
             .set_roughness(130.0)
             .set_minorloss(0.0)
             .set_status(LinkStatus::Open)
@@ -242,7 +242,7 @@ pub mod benchmark {
             .set_start(3)
             .set_end(4)
             .set_length(1000.0)
-            .set_diameter(0.30)
+            .set_diameter(300.0)
             .set_roughness(130.0)
             .set_minorloss(0.0)
             .set_status(LinkStatus::Open)
@@ -254,7 +254,7 @@ pub mod benchmark {
             .set_start(4)
             .set_end(5)
             .set_length(1000.0)
-            .set_diameter(0.30)
+            .set_diameter(300.0)
             .set_roughness(130.0)
             .set_minorloss(0.0)
             .set_status(LinkStatus::Open)
@@ -264,11 +264,24 @@ pub mod benchmark {
         let js = vec![n2, n3, n4, n5];
         let ps = vec![p1, p2, p3, p4];
 
+        let optns = Options {
+            flow_unit: FlowUnits::Lps,
+            headloss_formula: HeadlossFormula::Hw,
+            viscosity: 0.000001,
+            trials: 40,
+            accuracy: 0.0001,
+            unbalanced: atakoris::Unbalanced::StopIter,
+            pattern: 0,
+            demand_multiplier: 1.0,
+            emitter_exponent: 0.0,
+        };
+
         let net: Network = NetworkBuilder::new()
             .set_title(Some("Network Todini 1".into()))
             .set_junctions(Some(js))
             .set_tanks(Some(ts))
             .set_pipes(Some(ps))
+            .set_options(optns)
             .build();
 
         net

@@ -22,14 +22,21 @@ use super::network::Network;
 
 pub struct Solver2 {
     ///
-    /// non-zero & strict positive m-value. Default value : m = 100.
+    /// non-zero & strict positive m-value. Default value : m = 100, m includes in [10.0, 10.0^6].
     ///
     m: f64,
     n: f64,
-    iterations: Option<usize>,
-    final_error: Option<(f64, f64)>,
-    time_analysis: Option<Duration>,
     objective_error: f64,
+    flow_unit_multiplayer: f64,
+    //---------------------------------------
+    junction_count: usize,
+    tank_count: usize,
+    reservoir_count: usize,
+
+    pipe_count: usize,
+    pump_count: usize,
+    valve_count: usize,
+    // --------------------------------------
 }
 
 impl Solver2 {
@@ -38,27 +45,36 @@ impl Solver2 {
     ///
     /// objective_error : minimal error flow and head computation (stopping criterion). If None, the default value (objective_error = 0.001) will be used.
     ///
-    pub fn new(objective_error: Option<f64>) -> Self {
+    pub fn new(m_parameter: Option<f64>, objective_error: Option<f64>) -> Self {
         let obj_err: f64 = match objective_error {
             None => 0.0001,
             Some(objerr) => f64::max(objerr, 0.00000000001),
         };
 
+        let m_value = match m_parameter {
+            None => 100.0,
+            Some(m) => f64::min(m, 1000000.0).max(10.0),
+        };
+
         Solver2 {
-            m: 1000.0f64,
+            m: m_value,
             n: 1.852f64,
-            iterations: None,
-            final_error: None,
             objective_error: obj_err,
-            time_analysis: None,
+            junction_count: 0,
+            tank_count: 0,
+            reservoir_count: 0,
+            pipe_count: 0,
+            pump_count: 0,
+            valve_count: 0,
+            flow_unit_multiplayer: 1.0,
         }
     }
 
     ///
-    /// Set non-zero & strict positive m-value. Default value : m = 100.
+    /// Set non-zero & strict positive m-value. Default value : m = 100, m inculdes in [10.0, 10.0^6].
     ///
     pub fn set_m_parameter(&mut self, m_value: f64) {
-        self.m = f64::max(m_value, 1.0);
+        self.m = f64::max(m_value, 10.0).min(1000000.0);
     }
 
     ///
@@ -67,302 +83,298 @@ impl Solver2 {
     pub fn set_objective_error(&mut self, err_value: f64) {
         self.objective_error = f64::max(err_value, 0.0000000000001);
     }
-
-    pub fn get_final_iterations(&self) -> Option<usize> {
-        self.iterations
-    }
-
-    pub fn get_final_errors(&self) -> Option<(f64, f64)> {
-        self.final_error
-    }
-
     pub fn get_version(&self) -> &'static str {
         "0.1.3"
     }
 
-    pub fn get_time_analysis(&self) -> Option<Duration> {
-        self.time_analysis
+    fn init_solver(&mut self, network: &Network) -> bool {
+        self.junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
+        self.tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
+        self.reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
+
+        self.pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
+        self.pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
+        self.valve_count = network.valves.as_ref().map_or(0, |links| links.len());
+        let no = self.tank_count + self.reservoir_count;
+        // number of pipes + pumps + valves
+        let np = self.pipe_count + self.pump_count + self.valve_count;
+
+        self.flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
+
+        if no == 0 || np == 0 {
+            return false;
+        }
+        true
     }
 
-    pub fn compute(&mut self, network: &mut Network) {
+    pub fn compute(&mut self, network: &mut Network) -> Result<AnalysisResult, String> {
         let chronos = Instant::now();
 
-        let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
-        // let tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
-        // let reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
+        if !self.init_solver(network) {
+            return Err(format!("Solver. I can not solve the network"));
+        };
 
-        let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
-        let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
-        let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
+        let (a21, a10, h0, q) = self.get_network(&network);
+        let nn = a21.len();
+        let np = a21[0].len();
 
-        if let Some((a21, a10, h0, q)) = &self.get_network(&network) {
-            let flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(&network);
+        // let npip : usize = self.pipes.len();
+        // let npump : usize = self.pumps.len();
+        // let nvlv : usize = self.valves.len();
 
-            let nn = a21.len();
-            let np = a21[0].len();
+        if nn < 2 {
+            panic!("No nodes !!!");
+        } // return Option::None;}
+        if np < 1 {
+            panic!("No pipes !!!");
+        } //return Option::None;}
 
-            // let npip : usize = self.pipes.len();
-            // let npump : usize = self.pumps.len();
-            // let nvlv : usize = self.valves.len();
+        let mut iter: usize = 0;
+        let itermax: usize = 20;
+        let objective_err: f64 = self.objective_error;
+        let mut final_err_q: f64 = f64::MAX;
+        let mut final_err_h: f64 = f64::MAX;
 
-            if nn < 2 {
-                panic!("No nodes !!!");
-            } // return Option::None;}
-            if np < 1 {
-                panic!("No pipes !!!");
-            } //return Option::None;}
+        let mut _a: Vec<Vec<f64>> = self.initilize_a_matrix(&network); // = vec![vec![0.0f64; np]; np]; //A
+        let mut _b = vec![0.0f64; np]; // B
+        let mut _c = vec![0.0f64; np];
+        let mut _flowsq = vec![0.0f64; np];
+        let mut _previous_q = vec![0.0f64; np];
+        let mut _headsh = vec![0.0f64; nn];
+        let mut _previous_h = vec![0.0f64; nn];
 
-            let mut iter: usize = 0;
-            let itermax: usize = 20;
-            let objective_err: f64 = self.objective_error;
-            let mut final_err_q: f64 = f64::MAX;
-            let mut final_err_h: f64 = f64::MAX;
+        let mut _coef_a = vec![0.0f64; np]; // ai
+        let mut _coef_b = vec![0.0f64; np]; //bi
 
-            let mut _a: Vec<Vec<f64>> = self.initilize_a_matrix(); // = vec![vec![0.0f64; np]; np]; //A
-            let mut _b = vec![0.0f64; np]; // B
-            let mut _c = vec![0.0f64; np];
-            let mut _flowsq = vec![0.0f64; np];
-            let mut _previous_q = vec![0.0f64; np];
-            let mut _headsh = vec![0.0f64; nn];
-            let mut _previous_h = vec![0.0f64; nn];
+        //let m : f64 = 100.0;
+        //let n : f64 = 1.852; //2.0;
 
-            let mut _coef_a = vec![0.0f64; np]; // ai
-            let mut _coef_b = vec![0.0f64; np]; //bi
+        let _a12 = Self::transpose(&a21);
 
-            //let m : f64 = 100.0;
-            //let n : f64 = 1.852; //2.0;
+        #[cfg(feature = "deep_report")]
+        {
+            Self::print(&a21, &"A21");
+            Self::print(&_a12, &"A12");
+        }
 
-            let _a12 = Self::transpose(&a21);
+        // step 0 : compute Qmax
+        let qmax: f64 = q.iter().sum();
+        /*
+        for i in 0..q.len() {
+           qmax+=q[i];
+        } */
+
+        // compute delta Q
+        let deltaq = qmax / self.m;
+        for i in 0..np {
+            _flowsq[i] = qmax;
+        }
+
+        let mut stoploop: bool = false;
+
+        while stoploop == false {
+            #[cfg(feature = "report")]
+            {
+                println!("-----------------------------> iter : {}", iter);
+            }
 
             #[cfg(feature = "deep_report")]
             {
-                Self::print(&a21, &"A21");
-                Self::print(&_a12, &"A12");
+                Solver::print(&_a, &"[A]0");
+                Solver::print_vector(&_b, &"[B]0");
             }
 
-            // step 0 : compute Qmax
-            let qmax: f64 = q.iter().sum();
-            /*
-            for i in 0..q.len() {
-               qmax+=q[i];
-            } */
+            //Updating A (eq13) & B (eq14):
+            self.update_matrices_a_b(&network, &mut _a, &mut _b, &_flowsq, deltaq, self.n);
 
-            // compute delta Q
-            let deltaq = qmax / self.m;
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print(&_a, &String::from("[A]"));
+                Solver::print_vector(&_b, &"[B]");
+            }
+
+            // Step 2 : Compute V (eq) and C
+            // Compute V:
+            let inva = Solver2::invers_diagonal(&_a);
+            let inva = match inva {
+                Ok(matrx) => matrx,
+                Err(error) => panic!("Problem with inverse diagonal matrix : {:?}", error),
+            };
+
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print(&inva, "[A-]");
+            }
+
+            let _v1 = Solver2::product(&a21, &inva);
+            let _v1 = match _v1 {
+                Ok(matrx) => matrx,
+                Err(error) => panic!("Problem with product matrices : {:?}", error),
+            };
+
+            let _v = Solver2::product(&_v1, &_a12);
+            let _v = match _v {
+                Ok(matrx) => matrx,
+                Err(error) => panic!("Problem with product matrices : {:?}", error),
+            };
+
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print(&_v, "[V]");
+            }
+
+            //Compute C:
+            let _tmpc = Solver2::product2(&a10, &h0);
+            let tmpc = match _tmpc {
+                Ok(vectr) => vectr,
+                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+            };
+
             for i in 0..np {
-                _flowsq[i] = qmax;
+                _c[i] = (-1.0 * _b[i]) - tmpc[i];
             }
 
-            let mut stoploop: bool = false;
+            //print_vector(&_c, "C : ");
 
-            while stoploop == false {
-                #[cfg(feature = "report")]
-                {
-                    println!("-----------------------------> iter : {}", iter);
-                }
+            // Step 3 : Compute H (eq.29)
+            let invv = Solver2::invers(&_v);
 
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print(&_a, &"[A]0");
-                    Solver::print_vector(&_b, &"[B]0");
-                }
+            let invv = match invv {
+                Ok(matrix) => matrix,
+                Err(error) => panic!("Problem with inverse matrix : {:?}", error),
+            };
 
-                //Updating A (eq13) & B (eq14):
-                self.update_matrices_a_b(&mut _a, &mut _b, &_flowsq, deltaq, self.n);
+            let tmp = Solver2::product2(&_v1, &_c);
 
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print(&_a, &String::from("[A]"));
-                    Solver::print_vector(&_b, &"[B]");
-                }
+            let mut tmp = match tmp {
+                Ok(vectr) => vectr,
+                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+            };
 
-                // Step 2 : Compute V (eq) and C
-                // Compute V:
-                let inva = Solver2::invers_diagonal(&_a);
-                let inva = match inva {
-                    Ok(matrx) => matrx,
-                    Err(error) => panic!("Problem with inverse diagonal matrix : {:?}", error),
-                };
-
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print(&inva, "[A-]");
-                }
-
-                let _v1 = Solver2::product(&a21, &inva);
-                let _v1 = match _v1 {
-                    Ok(matrx) => matrx,
-                    Err(error) => panic!("Problem with product matrices : {:?}", error),
-                };
-
-                let _v = Solver2::product(&_v1, &_a12);
-                let _v = match _v {
-                    Ok(matrx) => matrx,
-                    Err(error) => panic!("Problem with product matrices : {:?}", error),
-                };
-
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print(&_v, "[V]");
-                }
-
-                //Compute C:
-                let _tmpc = Solver2::product2(&a10, &h0);
-                let tmpc = match _tmpc {
-                    Ok(vectr) => vectr,
-                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-                };
-
-                for i in 0..np {
-                    _c[i] = (-1.0 * _b[i]) - tmpc[i];
-                }
-
-                //print_vector(&_c, "C : ");
-
-                // Step 3 : Compute H (eq.29)
-                let invv = Solver2::invers(&_v);
-
-                let invv = match invv {
-                    Ok(matrix) => matrix,
-                    Err(error) => panic!("Problem with inverse matrix : {:?}", error),
-                };
-
-                let tmp = Solver2::product2(&_v1, &_c);
-
-                let mut tmp = match tmp {
-                    Ok(vectr) => vectr,
-                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-                };
-
-                for i in 0..nn {
-                    tmp[i] -= q[i];
-                }
-
-                let _h = Solver2::product2(&invv, &tmp);
-                _headsh = match _h {
-                    Ok(vect) => vect,
-                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-                };
-
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print_vector(&_headsh, "[H] :");
-                }
-                // Step 4 : Compute flowws Q (eq30)
-                let tmpql = Solver2::product2(&inva, &_c);
-                let tmpql = match tmpql {
-                    Ok(vect) => vect,
-                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-                };
-
-                let tmpqm = Solver2::product(&inva, &_a12);
-                let tmpqm = match tmpqm {
-                    Ok(matrx) => matrx,
-                    Err(error) => panic!("Problem with matrix multiplication : {:?}", error),
-                };
-
-                let tmpqr = Solver2::product2(&tmpqm, &_headsh);
-                let tmpqr = match tmpqr {
-                    Ok(vect) => vect,
-                    Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-                };
-
-                for i in 0..np {
-                    _flowsq[i] = tmpql[i] - tmpqr[i];
-                }
-
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print_vector(&_flowsq, "[Q]");
-                }
-
-                #[cfg(feature = "deep_report")]
-                {
-                    Solver::print(&tmpqm, &String::from("At-1 x A12"));
-                }
-
-                //Check convergence :
-                let check_q_err = Solver2::check_convergence(&_flowsq, &_previous_q, objective_err);
-                match check_q_err.0 {
-                    false => stoploop = false,
-                    true => {
-                        let check_h_err =
-                            Solver2::check_convergence(&_headsh, &_previous_h, objective_err);
-                        final_err_h = check_h_err.1;
-                        // match check_h_err.0 {
-                        //     false => stoploop = false,
-                        //     true => stoploop = true,
-                        //  };
-                        stoploop = check_h_err.0;
-                    }
-                };
-
-                final_err_q = check_q_err.1;
-
-                //Copy data
-                for i in 0..np {
-                    _previous_q[i] = _flowsq[i];
-                }
-
-                for j in 0..nn {
-                    _previous_h[j] = _headsh[j];
-                }
-
-                iter += 1;
-
-                if iter >= itermax {
-                    stoploop = true;
-                }
-
-                #[cfg(feature = "report")]
-                {
-                    Solver::print_vector(&_flowsq, "[Qs]");
-                    Solver::print_vector(&_headsh, "[Hs]");
-                }
+            for i in 0..nn {
+                tmp[i] -= q[i];
             }
 
-            // ========================   Solver2::copy_results(&mut network, &_headsh, &_flowsq); ===============
+            let _h = Solver2::product2(&invv, &tmp);
+            _headsh = match _h {
+                Ok(vect) => vect,
+                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+            };
 
-            if let Some(junctions) = &mut network.junctions {
-                for i in 0..junction_count {
-                    junctions[i].head = Some(_headsh[i]);
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print_vector(&_headsh, "[H] :");
+            }
+            // Step 4 : Compute flowws Q (eq30)
+            let tmpql = Solver2::product2(&inva, &_c);
+            let tmpql = match tmpql {
+                Ok(vect) => vect,
+                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+            };
+
+            let tmpqm = Solver2::product(&inva, &_a12);
+            let tmpqm = match tmpqm {
+                Ok(matrx) => matrx,
+                Err(error) => panic!("Problem with matrix multiplication : {:?}", error),
+            };
+
+            let tmpqr = Solver2::product2(&tmpqm, &_headsh);
+            let tmpqr = match tmpqr {
+                Ok(vect) => vect,
+                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
+            };
+
+            for i in 0..np {
+                _flowsq[i] = tmpql[i] - tmpqr[i];
+            }
+
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print_vector(&_flowsq, "[Q]");
+            }
+
+            #[cfg(feature = "deep_report")]
+            {
+                Solver::print(&tmpqm, &String::from("At-1 x A12"));
+            }
+
+            //Check convergence :
+            let check_q_err = Solver2::check_convergence(&_flowsq, &_previous_q, objective_err);
+            match check_q_err.0 {
+                false => stoploop = false,
+                true => {
+                    let check_h_err =
+                        Solver2::check_convergence(&_headsh, &_previous_h, objective_err);
+                    final_err_h = check_h_err.1;
+                    // match check_h_err.0 {
+                    //     false => stoploop = false,
+                    //     true => stoploop = true,
+                    //  };
+                    stoploop = check_h_err.0;
                 }
             };
 
-            if let Some(pipes) = &mut network.pipes {
-                for i in 0..pipe_count {
-                    pipes[i].flow = Some(_flowsq[i] / flow_unit_multiplayer);
-                }
-            };
+            final_err_q = check_q_err.1;
 
-            let mut k: usize = pipe_count;
+            //Copy data
+            for i in 0..np {
+                _previous_q[i] = _flowsq[i];
+            }
 
-            if let Some(pumps) = &mut network.pumps {
-                for i in 0..pump_count {
-                    pumps[i].flow = Some(_flowsq[k] / flow_unit_multiplayer);
-                    k += 1;
-                }
-            };
+            for j in 0..nn {
+                _previous_h[j] = _headsh[j];
+            }
 
-            if let Some(valves) = &mut network.valves {
-                for i in 0..valve_count {
-                    valves[i].flow = Some(_flowsq[k] / flow_unit_multiplayer);
-                    k += 1;
-                }
-            };
-            // ====================================================================
-            // self.iterations = Some(iter);
-            // self.final_error = Some((final_err_q, final_err_h));
+            iter += 1;
 
-            // self.time_analysis = Some(chronos.elapsed());
+            if iter >= itermax {
+                stoploop = true;
+            }
+
+            #[cfg(feature = "report")]
+            {
+                Solver::print_vector(&_flowsq, "[Qs]");
+                Solver::print_vector(&_headsh, "[Hs]");
+            }
         }
-        /*  let wdn = NetworkBuilder::new()
-        .set_junctions(Some(self.junctions.clone()))
-        .set_pipes(Some(self.pipes.clone()))
-        .set_pumps(Some(self.pumps.clone()))
-        .set_valves(Some(self.valves.clone()))
-        .build();  */
-        // Some(&self.network)
+
+        self.update_network(network, &_flowsq, &_headsh);
+        let time_analysis = chronos.elapsed();
+        let analysis_result = AnalysisResult::new(iter, final_err_q, final_err_h, time_analysis);
+        Ok(analysis_result)
+    }
+
+    fn update_network(&self, network: &mut Network, flows_q: &[f64], heads_h: &[f64]) {
+        // ========================   Solver2::copy_results(&mut network, &_headsh, &_flowsq); ===============
+
+        if let Some(junctions) = &mut network.junctions {
+            for i in 0..self.junction_count {
+                junctions[i].head = Some(heads_h[i]);
+            }
+        };
+
+        if let Some(pipes) = &mut network.pipes {
+            for i in 0..self.pipe_count {
+                pipes[i].flow = Some(flows_q[i] / self.flow_unit_multiplayer);
+            }
+        };
+
+        let mut k: usize = self.pipe_count;
+
+        if let Some(pumps) = &mut network.pumps {
+            for i in 0..self.pump_count {
+                pumps[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
+                k += 1;
+            }
+        };
+
+        if let Some(valves) = &mut network.valves {
+            for i in 0..self.valve_count {
+                valves[i].flow = Some(flows_q[k] / self.flow_unit_multiplayer);
+                k += 1;
+            }
+        };
+        // ====================================================================
     }
 
     ///
@@ -390,18 +402,14 @@ impl Solver2 {
     ///
     /// Get network matrices
     ///
-    fn get_network(
-        &mut self,
-        network: &Network,
-    ) -> Option<(Vec<Vec<f64>>, Vec<Vec<f64>>, Vec<f64>, Vec<f64>)> {
-        let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
-        let tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
-        let reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
+    fn get_network(&self, network: &Network) -> (Vec<Vec<f64>>, Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+        let junction_count = self.junction_count;
+        let tank_count = self.tank_count;
+        let reservoir_count = self.reservoir_count;
 
-        let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
-        let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
-        let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
-
+        let pipe_count = self.pipe_count;
+        let pump_count = self.pump_count;
+        let valve_count = self.valve_count;
         let no = tank_count + reservoir_count;
 
         let pipes_pumps = pipe_count + pump_count;
@@ -409,11 +417,6 @@ impl Solver2 {
         // number of pipes + pumps + valves
         let np = pipe_count + pump_count + valve_count;
 
-        if no == 0 || np == 0 {
-            return None;
-        }
-
-        let flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
         // =========================================================
         /*
         println!(
@@ -483,7 +486,7 @@ impl Solver2 {
 
             //nodal demand
             for i in 0..junction_count {
-                q[i] = junctions[i].demand * flow_unit_multiplayer;
+                q[i] = junctions[i].demand * self.flow_unit_multiplayer;
             }
             //
         };
@@ -618,7 +621,7 @@ impl Solver2 {
                 println!("H0: {:?}", _h0);
                 println!("q = {:?}", q);
         */
-        Some((_a21, _a10, _h0, q))
+        (_a21, _a10, _h0, q)
     }
 
     fn check_convergence(actual: &[f64], previous: &[f64], objective: f64) -> (bool, f64) {
@@ -798,22 +801,10 @@ impl Solver2 {
         }
     }
 
-    fn initilize_a_matrix(network: &Network) -> Vec<Vec<f64>> {
-        // let self.junction_count : usize = match self.junctions {
-        //     Some(junctions) => junctions.len(),
-        //     None => 0,
-        // };
-
-        // let nt = match self.tanks{
-        //     Some(tanks) => tanks.len(),
-        //     None => 0,
-        // };
-
-        // let nr = match self.reservoirs{
-        //     Some(reservoirs) => reservoirs.len(),
-        //     None => 0,
-        // };
-        let (npip, npmp, nvlv) = Solver2::links_cont(network);
+    fn initilize_a_matrix(&self, network: &Network) -> Vec<Vec<f64>> {
+        let npip = self.pipe_count;
+        let npmp = self.pump_count;
+        let nvlv = self.valve_count;
 
         let np = npip + npmp + nvlv;
 
@@ -856,21 +847,8 @@ impl Solver2 {
         result_a
     }
 
-    fn links_cont(network: &Network) -> (usize, usize, usize) {
-        let pipe_count = network.pipes.as_ref().map_or(0, |links| links.len());
-        let pump_count = network.pumps.as_ref().map_or(0, |links| links.len());
-        let valve_count = network.valves.as_ref().map_or(0, |links| links.len());
-        (pipe_count, pump_count, valve_count)
-    }
-
-    fn nodes_count(network: &Network) -> (usize, usize, usize) {
-        let junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
-        let tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
-        let reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
-        (junction_count, tank_count, reservoir_count)
-    }
-
     fn update_matrices_a_b(
+        &self,
         network: &Network,
         a: &mut Vec<Vec<f64>>,
         b: &mut Vec<f64>,
@@ -882,7 +860,10 @@ impl Solver2 {
         let mut _coef_a: f64 = 0.0;
         let mut _coef_b: f64 = 0.0;
 
-        let (npip, npmp, nvlv) = Solver2::links_cont(network);
+        //  let (npip, npmp, nvlv) = Solver2::links_cont(network);
+        let npip = self.pipe_count;
+        let npmp = self.pump_count;
+        let nvlv = self.valve_count;
 
         if let Some(pipes) = &network.pipes {
             //update A & B matrices for pipes :
@@ -1038,4 +1019,35 @@ impl Solver2 {
             println!("  {}", vector[i]);
         }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+pub struct AnalysisResult {
+    pub iterations: usize,
+    pub final_flow_error: f64,
+    pub final_head_error: f64,
+    pub time_analysis: Duration,
+}
+
+impl AnalysisResult {
+    pub fn new(
+        iterations: usize,
+        final_flow_error: f64,
+        final_head_error: f64,
+        time_analysis: Duration,
+    ) -> Self {
+        Self {
+            iterations,
+            final_flow_error,
+            final_head_error,
+            time_analysis,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn solver2_test1() {}
 }
