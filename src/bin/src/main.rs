@@ -59,7 +59,7 @@ fn main() {
 
     // println!("Solver1 =================================");
 
-    // solver2_test_modena_net();
+    solver2_test_modena_net();
 }
 
 #[allow(dead_code)]

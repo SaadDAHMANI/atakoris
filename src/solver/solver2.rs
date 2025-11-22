@@ -15,6 +15,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     AFD_FACTOR, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, Network, network::FlowUnits,
+    solver::SolverError,
 };
 
 pub struct Solver2 {
@@ -77,14 +78,14 @@ impl Solver2 {
     ///
     /// Set non-zero & strict positive. Default value :  objective_error = 0.001.
     ///
-    pub fn set_objective_error(&mut self, err_value: f64) {
+    pub fn set_target_error(&mut self, err_value: f64) {
         self.target_error = f64::max(err_value, 0.0000000000001);
     }
     pub fn get_version(&self) -> &'static str {
         "0.1.3"
     }
 
-    fn init_solver(&mut self, network: &Network) -> bool {
+    fn init_solver(&mut self, network: &Network) -> Result<(), SolverError> {
         self.junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
         self.tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
         self.reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
@@ -98,17 +99,22 @@ impl Solver2 {
 
         self.flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
 
-        if no == 0 || np == 0 {
-            return false;
-        }
-        true
+        if no == 0 {
+            return Err(SolverError::NoWaterSourceErr);
+        };
+
+        if np == 0 {
+            return Err(SolverError::EmptyLinksError);
+        };
+
+        Ok(())
     }
 
-    pub fn compute(&mut self, network: &mut Network) -> Result<AnalysisResult, String> {
+    pub fn compute(&mut self, network: &mut Network) -> Result<AnalysisResult, SolverError> {
         let chronos = Instant::now();
 
-        if !self.init_solver(network) {
-            return Err(format!("Solver. I can not solve the network"));
+        if let Err(net_err) = self.init_solver(network) {
+            return Err(net_err);
         };
 
         let (a21, a10, h0, q) = self.get_network(&network);
@@ -120,10 +126,10 @@ impl Solver2 {
         // let nvlv : usize = self.valves.len();
 
         if nn < 2 {
-            panic!("No nodes !!!");
+            return Err(SolverError::EmptyNetwork);
         } // return Option::None;}
         if np < 1 {
-            panic!("No pipes !!!");
+            return Err(SolverError::EmptyLinksError);
         } //return Option::None;}
 
         let mut iter: usize = 0;
@@ -142,16 +148,7 @@ impl Solver2 {
         let mut _coef_a = vec![0.0f64; np]; // ai
         let mut _coef_b = vec![0.0f64; np]; //bi
 
-        //let m : f64 = 100.0;
-        //let n : f64 = 1.852; //2.0;
-
         let _a12 = Self::transpose(&a21);
-
-        #[cfg(feature = "deep_report")]
-        {
-            Self::print(&a21, &"A21");
-            Self::print(&_a12, &"A12");
-        }
 
         // step 0 : compute Qmax
         let qmax: f64 = q.iter().sum();
@@ -169,144 +166,53 @@ impl Solver2 {
         let mut stoploop: bool = false;
 
         while stoploop == false {
-            #[cfg(feature = "report")]
-            {
-                println!("-----------------------------> iter : {}", iter);
-            }
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&_a, &"[A]0");
-                Solver::print_vector(&_b, &"[B]0");
-            }
-
             //Updating A (eq13) & B (eq14):
             self.update_matrices_a_b(&network, &mut _a, &mut _b, &_flowsq, deltaq, self.n);
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&_a, &String::from("[A]"));
-                Solver::print_vector(&_b, &"[B]");
-            }
-
             // Step 2 : Compute V (eq) and C
             // Compute V:
-            let inva = Solver2::invers_diagonal(&_a);
-            let inva = match inva {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with inverse diagonal matrix : {:?}", error),
-            };
+            let inva = Solver2::invers_diagonal(&_a)?;
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&inva, "[A-]");
-            }
+            let _v1 = Solver2::product(&a21, &inva)?;
 
-            let _v1 = Solver2::product(&a21, &inva);
-            let _v1 = match _v1 {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with product matrices : {:?}", error),
-            };
-
-            let _v = Solver2::product(&_v1, &_a12);
-            let _v = match _v {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with product matrices : {:?}", error),
-            };
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&_v, "[V]");
-            }
+            let _v = Solver2::product(&_v1, &_a12)?;
 
             //Compute C:
-            let _tmpc = Solver2::product2(&a10, &h0);
-            let tmpc = match _tmpc {
-                Ok(vectr) => vectr,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            let tmpc = Solver2::product2(&a10, &h0)?;
 
             for i in 0..np {
                 _c[i] = (-1.0 * _b[i]) - tmpc[i];
             }
 
-            //print_vector(&_c, "C : ");
-
             // Step 3 : Compute H (eq.29)
-            let invv = Solver2::invers(&_v);
+            let invv = Solver2::inverse_matrix_jordan(&_v)?;
 
-            let invv = match invv {
-                Ok(matrix) => matrix,
-                Err(error) => panic!("Problem with inverse matrix : {:?}", error),
-            };
-
-            let tmp = Solver2::product2(&_v1, &_c);
-
-            let mut tmp = match tmp {
-                Ok(vectr) => vectr,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            let mut tmp = Solver2::product2(&_v1, &_c)?;
 
             for i in 0..nn {
                 tmp[i] -= q[i];
             }
 
-            let _h = Solver2::product2(&invv, &tmp);
-            _headsh = match _h {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            _headsh = Solver2::product2(&invv, &tmp)?;
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print_vector(&_headsh, "[H] :");
-            }
             // Step 4 : Compute flowws Q (eq30)
-            let tmpql = Solver2::product2(&inva, &_c);
-            let tmpql = match tmpql {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            let tmpql = Solver2::product2(&inva, &_c)?;
 
-            let tmpqm = Solver2::product(&inva, &_a12);
-            let tmpqm = match tmpqm {
-                Ok(matrx) => matrx,
-                Err(error) => panic!("Problem with matrix multiplication : {:?}", error),
-            };
+            let tmpqm = Solver2::product(&inva, &_a12)?;
 
-            let tmpqr = Solver2::product2(&tmpqm, &_headsh);
-            let tmpqr = match tmpqr {
-                Ok(vect) => vect,
-                Err(error) => panic!("Problem with product matrix by vector : {:?}", error),
-            };
+            let tmpqr = Solver2::product2(&tmpqm, &_headsh)?;
 
             for i in 0..np {
                 _flowsq[i] = tmpql[i] - tmpqr[i];
             }
 
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print_vector(&_flowsq, "[Q]");
-            }
-
-            #[cfg(feature = "deep_report")]
-            {
-                Solver::print(&tmpqm, &String::from("At-1 x A12"));
-            }
-
             //Check convergence :
             let check_q_err = self.check_convergence(&_flowsq, &_previous_q);
-            match check_q_err.0 {
-                false => stoploop = false,
-                true => {
-                    let check_h_err = self.check_convergence(&_headsh, &_previous_h);
-                    final_err_h = check_h_err.1;
-                    // match check_h_err.0 {
-                    //     false => stoploop = false,
-                    //     true => stoploop = true,
-                    //  };
-                    stoploop = check_h_err.0;
-                }
+
+            if check_q_err.0 {
+                let check_h_err = self.check_convergence(&_headsh, &_previous_h);
+                final_err_h = check_h_err.1;
+                stoploop = true;
             };
 
             final_err_q = check_q_err.1;
@@ -324,12 +230,6 @@ impl Solver2 {
 
             if iter >= itermax {
                 stoploop = true;
-            }
-
-            #[cfg(feature = "report")]
-            {
-                Solver::print_vector(&_flowsq, "[Qs]");
-                Solver::print_vector(&_headsh, "[Hs]");
             }
         }
 
@@ -621,11 +521,6 @@ impl Solver2 {
 
         let computed_err = sum_err / sumq;
 
-        #[cfg(feature = "report")]
-        {
-            println!("Actual convergence err : {}", computed_err);
-        }
-
         if computed_err <= self.target_error {
             (true, computed_err)
         } else {
@@ -633,35 +528,10 @@ impl Solver2 {
         }
     }
 
-    fn invers(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, String> {
-        // if matrix.len() != matrix[0].len() {
-        //     Err(String::from("Matrix is not square!"))
-        // }
-        // else {
-        //    let n = matrix.len();
-        //     ////let mut inv = vec![vec![0.0f64; n]; n];
-        //    ////Using peroxide crate :
-
-        //     let mut pmatrix = zeros(n,n);
-        //    //copy matrix
-        //    for i in 0..n {
-        //        for j in 0..n {
-        //            pmatrix[(i,j)]=matrix[i][j];
-        //        }
-        //    }
-        //    let inversed =pmatrix.inv().to_vec();
-        //    Ok(inversed)
-        // }
-
-        Solver2::inverse_matrix_jordan(&matrix)
-    }
-
-    fn inverse_matrix_jordan(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, String> {
+    fn inverse_matrix_jordan(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, SolverError> {
         let n = matrix.len();
 
-        if matrix.len() != matrix[0].len() {
-            Err(String::from("Matrix is not square!"))
-        } else {
+        if matrix.len() == matrix[0].len() {
             let mut a = vec![vec![0.0f64; 2 * n]; n];
 
             //copy th matrix
@@ -683,8 +553,7 @@ impl Solver2 {
 
             for i in 0..n {
                 if a[i][i] == 0.0 {
-                    panic!("diagonal is nul")
-                    //Err(String::from("Diagonal is null !"))
+                    return Err(SolverError::DivideByZero);
                 } else {
                     for j in 0..n {
                         if i != j {
@@ -712,10 +581,14 @@ impl Solver2 {
                 }
             }
             return Ok(b);
+        } else {
+            Err(SolverError::MatrixNotSquare(format!(
+                "Jordan inverse [V] matrix."
+            )))
         }
     }
 
-    fn product(left: &Vec<Vec<f64>>, right: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, String> {
+    fn product(left: &Vec<Vec<f64>>, right: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, SolverError> {
         let m = left.len();
         let pl = left[0].len();
 
@@ -738,13 +611,11 @@ impl Solver2 {
             }
             Ok(result)
         } else {
-            Err(String::from(
-                "Colomns's count of left matrix not equals rows's count of right matrix!",
-            ))
+            Err(SolverError::MatrixProductionError(pl, pr))
         }
     }
 
-    fn product2(left: &Vec<Vec<f64>>, right: &Vec<f64>) -> Result<Vec<f64>, String> {
+    fn product2(left: &Vec<Vec<f64>>, right: &Vec<f64>) -> Result<Vec<f64>, SolverError> {
         let m = left.len();
         let pl = left[0].len();
 
@@ -764,28 +635,23 @@ impl Solver2 {
             }
             Ok(result)
         } else {
-            Err(String::from(
-                "Colomns's count of left matrix not equals rows's count of right vector!",
-            ))
+            Err(SolverError::MatrixProductionError(pl, pr))
         }
     }
 
-    fn invers_diagonal(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, String> {
-        if matrix.len() == 0 {
-            Err(String::from("The matrix size must be >0!"))
-        } else {
-            if matrix.len() == matrix[0].len() {
-                let mut invers = vec![vec![0.0f64; matrix.len()]; matrix.len()];
+    fn invers_diagonal(matrix: &Vec<Vec<f64>>) -> Result<Vec<Vec<f64>>, SolverError> {
+        let mlen = matrix.len();
 
-                for i in 0..matrix.len() {
-                    invers[i][i] = 1.0 / matrix[i][i];
-                }
+        let mut invers = vec![vec![0.0f64; mlen]; mlen];
 
-                Ok(invers)
-            } else {
-                Err(String::from("The matrix is not square!"))
+        for i in 0..matrix.len() {
+            if matrix[i][i] == 0.0 {
+                return Err(SolverError::DivideByZero);
             }
+            invers[i][i] = 1.0 / matrix[i][i];
         }
+
+        Ok(invers)
     }
 
     fn initilize_a_matrix(&self, network: &Network) -> Vec<Vec<f64>> {
@@ -976,6 +842,23 @@ impl Solver2 {
         for i in 0..nr {
             print!("[{},:]", i);
             println!("  {}", vector[i]);
+        }
+    }
+}
+
+impl Default for Solver2 {
+    fn default() -> Self {
+        Solver2 {
+            m: 100.0,
+            n: 1.852f64,
+            target_error: 0.0001,
+            junction_count: 0,
+            tank_count: 0,
+            reservoir_count: 0,
+            pipe_count: 0,
+            pump_count: 0,
+            valve_count: 0,
+            flow_unit_multiplayer: 1.0,
         }
     }
 }
