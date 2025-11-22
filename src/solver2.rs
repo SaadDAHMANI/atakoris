@@ -26,7 +26,7 @@ pub struct Solver2 {
     ///
     m: f64,
     n: f64,
-    objective_error: f64,
+    target_error: f64,
     flow_unit_multiplayer: f64,
     //---------------------------------------
     junction_count: usize,
@@ -45,8 +45,8 @@ impl Solver2 {
     ///
     /// objective_error : minimal error flow and head computation (stopping criterion). If None, the default value (objective_error = 0.001) will be used.
     ///
-    pub fn new(m_parameter: Option<f64>, objective_error: Option<f64>) -> Self {
-        let obj_err: f64 = match objective_error {
+    pub fn new(m_parameter: Option<f64>, target_error: Option<f64>) -> Self {
+        let obj_err: f64 = match target_error {
             None => 0.0001,
             Some(objerr) => f64::max(objerr, 0.00000000001),
         };
@@ -59,7 +59,7 @@ impl Solver2 {
         Solver2 {
             m: m_value,
             n: 1.852f64,
-            objective_error: obj_err,
+            target_error: obj_err,
             junction_count: 0,
             tank_count: 0,
             reservoir_count: 0,
@@ -81,7 +81,7 @@ impl Solver2 {
     /// Set non-zero & strict positive. Default value :  objective_error = 0.001.
     ///
     pub fn set_objective_error(&mut self, err_value: f64) {
-        self.objective_error = f64::max(err_value, 0.0000000000001);
+        self.target_error = f64::max(err_value, 0.0000000000001);
     }
     pub fn get_version(&self) -> &'static str {
         "0.1.3"
@@ -131,7 +131,6 @@ impl Solver2 {
 
         let mut iter: usize = 0;
         let itermax: usize = 20;
-        let objective_err: f64 = self.objective_error;
         let mut final_err_q: f64 = f64::MAX;
         let mut final_err_h: f64 = f64::MAX;
 
@@ -299,12 +298,11 @@ impl Solver2 {
             }
 
             //Check convergence :
-            let check_q_err = Solver2::check_convergence(&_flowsq, &_previous_q, objective_err);
+            let check_q_err = self.check_convergence(&_flowsq, &_previous_q);
             match check_q_err.0 {
                 false => stoploop = false,
                 true => {
-                    let check_h_err =
-                        Solver2::check_convergence(&_headsh, &_previous_h, objective_err);
+                    let check_h_err = self.check_convergence(&_headsh, &_previous_h);
                     final_err_h = check_h_err.1;
                     // match check_h_err.0 {
                     //     false => stoploop = false,
@@ -616,7 +614,7 @@ impl Solver2 {
         (_a21, _a10, _h0, q)
     }
 
-    fn check_convergence(actual: &[f64], previous: &[f64], objective: f64) -> (bool, f64) {
+    fn check_convergence(&self, actual: &[f64], previous: &[f64]) -> (bool, f64) {
         let sum_err = actual
             .iter()
             .zip(previous.iter())
@@ -631,7 +629,7 @@ impl Solver2 {
             println!("Actual convergence err : {}", computed_err);
         }
 
-        if computed_err <= objective {
+        if computed_err <= self.target_error {
             (true, computed_err)
         } else {
             (false, computed_err)
@@ -920,34 +918,6 @@ impl Solver2 {
                 b[k] = (x * (_intpart * _coef_a - _coef_a.powi(2))) - z;
             }
         }
-        /*
-                //println!("pump state {:?}, R = {}", network.pumps[0].state, network.pumps[0].get_rq(0.01));
-                match &self.network.pumps {
-                    None => {}
-                    Some(pumps) => {
-                        for i in 0..npmp {
-                            _intpart = flowsq[i + npip] / deltaq;
-                            _coef_a = f64::trunc(_intpart) * deltaq;
-                            _coef_b = _coef_a + deltaq; // f64::trunc(_intpart + f64::signum(flowsq[i + npip])) * deltaq;
-
-                            //Updating A (eq13):
-                            _intpart =
-                                (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
-                            a[i + npip][i + npip] = f64::signum(flowsq[i + npip])
-                                * _intpart
-                                * pumps[i].get_rq(flowsq[i + npip]);
-
-                            //Updating B (eq14):
-                            b[i + npip] = -1.0
-                                * f64::signum(flowsq[i + npip])
-                                * pumps[i].get_rq(flowsq[i + npip])
-                                * ((_intpart * _coef_a) - f64::powf(_coef_a, n));
-                        }
-                    }
-                };
-        */
-        //update A & B matrices for valves :
-
         let _k: usize = npip + npmp;
 
         match &network.valves {

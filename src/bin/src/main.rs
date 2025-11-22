@@ -40,8 +40,11 @@ static WDN: Lazy<Network> = Lazy::new(|| {
 fn main() {
     println!("Atakor : a Water Distribution Networks Analyser in Rust programming language.");
     println!("_________________________________________________________________________________");
-    solver1_test_network2_todini();
+
+    // solver1_test_network2_todini();
+
     println!("========================");
+
     solver2_test_network2_todini();
     //------------------------------------------------
     //  show_static_wdn();
@@ -51,11 +54,12 @@ fn main() {
     // test_network2_todini();
     // test_network4();
     // test_2loop_network();
-    solver1_test_modena_net();
 
-    println!("Solver2 =================================");
+    // solver1_test_modena_net();
 
-    solver2_test_modena_net();
+    // println!("Solver1 =================================");
+
+    // solver2_test_modena_net();
 }
 
 #[allow(dead_code)]
