@@ -50,8 +50,12 @@ fn main() {
     // test_network1_todini();
     // test_network2_todini();
     // test_network4();
-    // test_modena_net();
     // test_2loop_network();
+    solver1_test_modena_net();
+
+    println!("Solver2 =================================");
+
+    solver2_test_modena_net();
 }
 
 #[allow(dead_code)]
@@ -502,8 +506,8 @@ fn test_network4() {
 }
 
 #[allow(dead_code)]
-fn test_modena_net() {
-    let inp_file = "/home/sd/Documents/Rust_apps/atakor/src/bin/data/Modena.inp".to_owned();
+fn solver1_test_modena_net() {
+    let inp_file = "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Modena.inp".to_owned();
 
     //let parser : InpFileParser = InpFileParser::new(&inp_file);
 
@@ -512,23 +516,18 @@ fn test_modena_net() {
     match wdn {
         Err(eror) => println!("Cannot read the file because of : {:?}.", eror),
         Ok(mut net) => {
-            use std::time::Instant;
-            let now = Instant::now();
-
             let mut solver: Solver = Solver::new(&mut net, None);
             solver.set_m_parameter(100.00);
 
             let _result = solver.compute();
 
-            let elapsed = now.elapsed();
-            println!("\n Time duration (Elapsed) T : {:.2?} \n", elapsed);
-
             let (erq, erh) = solver.get_final_errors().unwrap();
             println!(
-                "Q_error: \n {:?} \n; H_error : \n {:?}; Iterations : {:?}",
+                "Q_error: \n {:?} \n; H_error : \n {:?}; Iterations : {:?}, Time : {:?}",
                 erq,
                 erh,
-                solver.get_final_iterations()
+                solver.get_final_iterations(),
+                solver.get_time_analysis(),
             );
 
             /* match result {
@@ -570,7 +569,7 @@ fn test_modena_net() {
                     }
                 }
             };
-
+            /*
             println!("___________[PUMPS]____________");
             match &net.pipes {
                 None => println!("no pipes !!!"),
@@ -591,6 +590,95 @@ fn test_modena_net() {
                     }
                 }
             };
+            */
+        }
+    };
+}
+
+#[allow(dead_code)]
+fn solver2_test_modena_net() {
+    let inp_file = "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Modena.inp".to_owned();
+
+    //let parser : InpFileParser = InpFileParser::new(&inp_file);
+
+    let wdn = InpFileParser::new(&inp_file).read();
+
+    match wdn {
+        Err(eror) => println!("Cannot read the file because of : {:?}.", eror),
+        Ok(mut net) => {
+            let mut solver: Solver2 = Solver2::new(Some(100.0), Some(0.0001));
+
+            match solver.compute(&mut net) {
+                Err(the_err) => println!("Err : {}", the_err),
+                Ok(result) => println!(
+                    "Q_error: \n {:?} \n; H_error : \n {:?}; Iterations : {:?}, Time : {:?}",
+                    result.final_flow_error,
+                    result.final_head_error,
+                    result.iterations,
+                    result.time_analysis
+                ),
+            };
+
+            /* match result {
+                None => println!("No results !!!"),
+                Some(wdn)=>{
+
+                    println!("___________[JUNCTIONS]____________");
+
+                    // match wdn.junctions {
+                    //     None => println!("no junctions !!!"),
+                    //     Some(nodes) => {
+                    //         for jn in nodes.iter() {
+                    //             println!("{}", jn.to_string())
+                    //         }
+                    //     },
+                    // };
+
+
+                    println!("___________[PIPES]____________");
+
+                    match wdn.pipes {
+                        None => println!("no pipes !!!"),
+                        Some(pipes) => {
+                            for elm in pipes.iter() {
+                                println!("{}", elm.to_string())
+                            }
+                        },
+                    };
+
+                }
+            } */
+
+            println!("___________[JUNCTIONS]____________");
+            match &net.junctions {
+                None => println!("no junctions !!!"),
+                Some(nodes) => {
+                    for jn in nodes.iter() {
+                        println!("{}", jn.to_string())
+                    }
+                }
+            };
+            /*
+            println!("___________[PUMPS]____________");
+            match &net.pipes {
+                None => println!("no pipes !!!"),
+                Some(pipes) => {
+                    for elm in pipes.iter() {
+                        println!("{}", elm.to_string())
+                    }
+                }
+            };
+
+            println!("___________[PUMPS]____________");
+
+            match &net.pumps {
+                None => println!("no pumps !!!"),
+                Some(pumps) => {
+                    for elm in pumps.iter() {
+                        println!("{}", elm.to_string())
+                    }
+                }
+            };*/
         }
     };
 }

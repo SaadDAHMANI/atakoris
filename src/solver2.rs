@@ -499,6 +499,8 @@ impl Solver2 {
             for k in 0..tank_count {
                 _h0[k] = tanks[k].head();
             }
+
+            let mut ki: usize;
             //-------------------tanks - pipes ----------------
             if let Some(pipes) = network.pipes.as_ref() {
                 for j in 0..tank_count {
@@ -517,16 +519,14 @@ impl Solver2 {
             if let Some(pumps) = network.pumps.as_ref() {
                 for j in 0..tank_count {
                     // Tanks - Pumps
-                    let mut k: usize = 0;
-
                     for i in pipe_count..pipes_pumps {
-                        if pumps[k].start == tanks[j].id {
+                        ki = i - pipe_count;
+
+                        if pumps[ki].start == tanks[j].id {
                             _a10[i][j] = -1.0;
-                        } else if pumps[k].end == tanks[j].id {
+                        } else if pumps[ki].end == tanks[j].id {
                             _a10[i][j] = 1.0;
                         };
-
-                        k += 1;
                     }
                 }
             };
@@ -534,16 +534,15 @@ impl Solver2 {
             if let Some(valves) = network.valves.as_ref() {
                 for j in 0..tank_count {
                     // Tanks - Valves
-                    let mut k: usize = 0;
 
                     for i in pipes_pumps..np {
-                        if valves[k].start == tanks[j].id {
+                        ki = i - pipes_pumps;
+
+                        if valves[ki].start == tanks[j].id {
                             _a10[i][j] = -1.0;
-                        } else if valves[k].end == tanks[j].id {
+                        } else if valves[ki].end == tanks[j].id {
                             _a10[i][j] = 1.0;
                         };
-
-                        k += 1;
                     }
                 }
             }
@@ -556,62 +555,55 @@ impl Solver2 {
                 _h0[k + tank_count] = reservoirs[k].head;
             }
 
+            let mut ki: usize;
+            let mut kj: usize;
+
             //-----------------Pipes ------------------------
             if let Some(pipes) = network.pipes.as_ref() {
                 for j in tank_count..no {
                     // Reservoirs - Pipes
-                    let mut k: usize = 0;
+                    kj = j - tank_count;
                     for i in 0..pipe_count {
-                        if pipes[i].start == reservoirs[k].id {
+                        if pipes[i].start == reservoirs[kj].id {
                             _a10[i][j] = -1.0;
-                        } else if pipes[i].end == reservoirs[k].id {
+                        } else if pipes[i].end == reservoirs[kj].id {
                             _a10[i][j] = 1.0;
                         };
-
-                        k += 1;
                     }
                 }
             };
             // ---------------- pumps ----------------------
             if let Some(pumps) = network.pumps.as_ref() {
-                let mut kj: usize = 0;
-
                 for j in tank_count..no {
+                    kj = j - tank_count;
                     // Reservoirs - Pumps
-                    let mut ki: usize = 0;
-
                     for i in pipe_count..pipes_pumps {
+                        ki = i - pipe_count;
+
                         if pumps[ki].start == reservoirs[kj].id {
                             _a10[i][j] = -1.0;
                         } else if pumps[ki].end == reservoirs[kj].id {
                             _a10[i][j] = 1.0;
                         };
-
-                        ki += 1;
                     }
-                    kj += 1;
                 }
             };
 
             //------------------ valves ----------------------
             if let Some(valves) = network.valves.as_ref() {
-                let mut kj: usize = 0;
-
                 for j in tank_count..no {
+                    kj = j - tank_count;
                     // Reservoirs - Valves
-                    let mut ki: usize = 0;
 
                     for i in pipes_pumps..np {
+                        ki = i - pipes_pumps;
+
                         if valves[ki].start == reservoirs[kj].id {
                             _a10[i][j] = -1.0;
                         } else if valves[ki].end == reservoirs[kj].id {
                             _a10[i][j] = 1.0;
                         };
-
-                        ki += 1;
                     }
-
-                    kj += 1;
                 }
             }
         }
