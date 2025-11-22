@@ -889,11 +889,11 @@ impl AnalysisResult {
 
 //#[allow(dead_code)]
 #[derive(Debug)]
-pub struct AsyncSolver2 {
-    pub net: Network,
+pub struct AsyncSolver2<'a> {
+    pub net: &'a Network,
     pub solver_rx: std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)>,
 }
-impl AsyncSolver2 {
+impl<'a> AsyncSolver2<'a> {
     pub fn start_solver(&mut self) {
         let (tx, rx) = std::sync::mpsc::channel();
         self.solver_rx = rx;
