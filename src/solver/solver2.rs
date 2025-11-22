@@ -110,6 +110,18 @@ impl Solver2 {
         Ok(())
     }
 
+    pub fn compute_async(network: Network) -> std::sync::mpsc::Receiver<Network> {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut wdn = network;
+
+        std::thread::spawn(move || {
+            let mut solver = Solver2::default();
+            let _result = solver.compute(&mut wdn);
+            tx.send(wdn).unwrap();
+        });
+        rx
+    }
+
     pub fn compute(&mut self, network: &mut Network) -> Result<AnalysisResult, SolverError> {
         let chronos = Instant::now();
 
@@ -887,27 +899,34 @@ impl AnalysisResult {
     }
 }
 
+/*
 //#[allow(dead_code)]
 #[derive(Debug)]
 pub struct AsyncSolver2<'a> {
     pub net: &'a Network,
-    pub solver_rx: std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)>,
+    pub solver_rx:
+        Option<std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)>>,
 }
 impl<'a> AsyncSolver2<'a> {
-    pub fn start_solver(&mut self) {
+    pub fn new(network: &'a Network) -> Self {
+        Self {
+            net: network,
+            solver_rx: None,
+        }
+    }
+    pub fn compute_async(&self, network: Network) -> std::sync::mpsc::Receiver<Network> {
         let (tx, rx) = std::sync::mpsc::channel();
-        self.solver_rx = rx;
-
-        let mut net_copy = self.net.clone();
+        let mut wdn = network;
 
         std::thread::spawn(move || {
             let mut solver = Solver2::default();
-            let result = solver.compute(&mut net_copy);
-            tx.send((net_copy, result)).unwrap();
+            let _result = solver.compute(&mut wdn);
+            tx.send(wdn).unwrap();
         });
+        rx
     }
 }
-
+*/
 #[cfg(test)]
 mod tests {
 
