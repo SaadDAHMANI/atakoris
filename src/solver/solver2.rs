@@ -18,6 +18,7 @@ use crate::{
     solver::SolverError,
 };
 
+#[derive(Debug)]
 pub struct Solver2 {
     ///
     /// non-zero & strict positive m-value. Default value : m = 100, m includes in [10.0, 10.0^6].
@@ -34,7 +35,6 @@ pub struct Solver2 {
     pipe_count: usize,
     pump_count: usize,
     valve_count: usize,
-    // --------------------------------------
 }
 
 impl Solver2 {
@@ -884,6 +884,27 @@ impl AnalysisResult {
             final_head_error,
             time_analysis,
         }
+    }
+}
+
+//#[allow(dead_code)]
+#[derive(Debug)]
+pub struct AsyncSolver2 {
+    pub net: Network,
+    pub solver_rx: std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)>,
+}
+impl AsyncSolver2 {
+    pub fn start_solver(&mut self) {
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.solver_rx = rx;
+
+        let mut net_copy = self.net.clone();
+
+        std::thread::spawn(move || {
+            let mut solver = Solver2::default();
+            let result = solver.compute(&mut net_copy);
+            tx.send((net_copy, result)).unwrap();
+        });
     }
 }
 
