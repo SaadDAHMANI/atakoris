@@ -10,7 +10,7 @@ pub use solver2::Solver2;
 
 use thiserror::Error;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct AnalysisResult {
     pub iterations: usize,
     pub final_flow_error: f64,
