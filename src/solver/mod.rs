@@ -1,10 +1,38 @@
+use std::time::Duration;
+
 pub mod solver;
 pub mod solver2;
+
 //----------------------
+
 pub use solver::Solver;
 pub use solver2::Solver2;
 
 use thiserror::Error;
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+pub struct AnalysisResult {
+    pub iterations: usize,
+    pub final_flow_error: f64,
+    pub final_head_error: f64,
+    pub time_analysis: Duration,
+}
+
+impl AnalysisResult {
+    pub fn new(
+        iterations: usize,
+        final_flow_error: f64,
+        final_head_error: f64,
+        time_analysis: Duration,
+    ) -> Self {
+        Self {
+            iterations,
+            final_flow_error,
+            final_head_error,
+            time_analysis,
+        }
+    }
+}
 
 #[derive(Error, Debug, Clone)]
 pub enum SolverError {

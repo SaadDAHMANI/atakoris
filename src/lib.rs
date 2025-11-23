@@ -15,8 +15,10 @@ pub mod ffi_dto;
 
 pub use network::*;
 pub use parsers::inpfileparser::InpFileParser;
+pub use solver::AnalysisResult;
 pub use solver::Solver;
 pub use solver::Solver2;
+pub use solver::SolverError;
 
 #[cfg(test)]
 mod tests {

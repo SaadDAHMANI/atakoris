@@ -11,11 +11,11 @@
 // a21 : incidence matrix (self.junction_count x np)
 // a12 = transpose(a21) : incidence matrix (np x self.junction_count)
 
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crate::{
-    AFD_FACTOR, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, Network, network::FlowUnits,
-    solver::SolverError,
+    AFD_FACTOR, AnalysisResult, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, Network,
+    SolverError, network::FlowUnits,
 };
 
 #[derive(Debug)]
@@ -110,14 +110,16 @@ impl Solver2 {
         Ok(())
     }
 
-    pub fn compute_async(network: Network) -> std::sync::mpsc::Receiver<Network> {
+    pub fn compute_sync(
+        network: Network,
+    ) -> std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)> {
         let (tx, rx) = std::sync::mpsc::channel();
         let mut wdn = network;
 
         std::thread::spawn(move || {
             let mut solver = Solver2::default();
-            let _result = solver.compute(&mut wdn);
-            tx.send(wdn).unwrap();
+            let result = solver.compute(&mut wdn);
+            tx.send((wdn, result)).unwrap();
         });
         rx
     }
@@ -874,31 +876,6 @@ impl Default for Solver2 {
         }
     }
 }
-
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct AnalysisResult {
-    pub iterations: usize,
-    pub final_flow_error: f64,
-    pub final_head_error: f64,
-    pub time_analysis: Duration,
-}
-
-impl AnalysisResult {
-    pub fn new(
-        iterations: usize,
-        final_flow_error: f64,
-        final_head_error: f64,
-        time_analysis: Duration,
-    ) -> Self {
-        Self {
-            iterations,
-            final_flow_error,
-            final_head_error,
-            time_analysis,
-        }
-    }
-}
-
 /*
 //#[allow(dead_code)]
 #[derive(Debug)]
