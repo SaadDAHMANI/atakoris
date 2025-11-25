@@ -793,7 +793,7 @@ impl Solver2 {
                 //Updating A (eq36):
                 // A(i,i) = R(i)*(b(i)^n-a(i)^n)/(b(i)-a(i));
 
-                _intpart = (f64::powf(_coef_b, n) - f64::powf(_coef_a, n)) / (_coef_b - _coef_a);
+                _intpart = (f64::powi(_coef_b, 2) - f64::powi(_coef_a, 2)) / (_coef_b - _coef_a);
                 a[k][k] = -1.0 * (x * _intpart + y);
 
                 //Updating B (eq37):
