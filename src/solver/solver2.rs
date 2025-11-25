@@ -101,6 +101,8 @@ impl Solver2 {
 
         self.flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
 
+        dbg!(self.flow_unit_multiplayer);
+
         if no == 0 {
             return Err(SolverError::NoWaterSourceErr);
         };
