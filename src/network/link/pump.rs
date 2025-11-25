@@ -33,12 +33,10 @@ pub struct Pump {
 
 impl Pump {
     #[allow(dead_code)]
-    fn head_of(&mut self, flow: f64, flow_unit_multiplier: f64) -> f64 {
+    fn head_of(&mut self, flow: f64) -> f64 {
         if flow > FLOW_EPSILON {
             if self.alpha != 0.0 {
-                return self.alpha * (flow / flow_unit_multiplier).powi(2)
-                    + self.beta * (flow / flow_unit_multiplier)
-                    + self.gamma;
+                return self.alpha * flow.powi(2) + self.beta * flow + self.gamma;
             } else {
                 return self.power_rating / (9.81 * f64::max(flow.abs(), FLOW_EPSILON));
             }
@@ -48,16 +46,11 @@ impl Pump {
         }
     }
 
-    #[allow(dead_code)]
-    fn head(&self, flow_unit_multiplier: f64) -> Option<f64> {
+    pub fn head(&self) -> Option<f64> {
         let _hq = match self.flow {
             Some(q) => {
                 if self.alpha != 0.0 {
-                    Some(
-                        self.alpha * (q / flow_unit_multiplier).powi(2)
-                            + self.beta * (q / flow_unit_multiplier)
-                            + self.gamma,
-                    )
+                    Some(self.alpha * q.powi(2) + self.beta * q + self.gamma)
                 } else {
                     Some(self.power_rating / (9.81 * f64::max(q.abs(), FLOW_EPSILON)))
                 }
