@@ -774,9 +774,11 @@ impl Solver2 {
         if let Some(pumps) = &network.pumps {
             //update A & B matrices for pipes :
             for i in 0..npmp {
-                let x = pumps[i].alpha;
-                let y = pumps[i].beta;
+                let x = pumps[i].alpha / self.flow_unit_multiplayer.powi(2);
+                let y = pumps[i].beta / self.flow_unit_multiplayer;
                 let z = pumps[i].gamma;
+
+                // dbg!((x, y, z));
 
                 let k = i + npip;
                 _intpart = flowsq[k].abs() / deltaq;
