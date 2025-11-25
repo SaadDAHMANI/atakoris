@@ -45,7 +45,7 @@ impl Solver2 {
     ///
     pub fn new(m_parameter: Option<f64>, target_error: Option<f64>) -> Self {
         let obj_err: f64 = match target_error {
-            None => 0.0001,
+            None => 0.001,
             Some(objerr) => f64::max(objerr, 0.00000000001),
         };
 
@@ -86,6 +86,8 @@ impl Solver2 {
     }
 
     fn init_solver(&mut self, network: &Network) -> Result<(), SolverError> {
+        // dbg!(network);
+
         self.junction_count = network.junctions.as_ref().map_or(0, |nodes| nodes.len());
         self.tank_count = network.tanks.as_ref().map_or(0, |nodes| nodes.len());
         self.reservoir_count = network.reservoirs.as_ref().map_or(0, |nodes| nodes.len());
@@ -109,15 +111,20 @@ impl Solver2 {
 
         Ok(())
     }
-
+    ///
+    /// Analyse the network,
+    /// m_parameter in [10., 1000000.], default =100.0
+    /// target_error >= 0.0000000001, default = 0.001
     pub fn compute_sync(
         network: Network,
+        m_parameter: Option<f64>,
+        target_error: Option<f64>,
     ) -> std::sync::mpsc::Receiver<(Network, Result<AnalysisResult, SolverError>)> {
         let (tx, rx) = std::sync::mpsc::channel();
         let mut wdn = network;
 
+        let mut solver = Solver2::new(m_parameter, target_error);
         std::thread::spawn(move || {
-            let mut solver = Solver2::default();
             let result = solver.compute(&mut wdn);
             tx.send((wdn, result)).unwrap();
         });
