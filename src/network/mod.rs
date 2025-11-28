@@ -1,6 +1,7 @@
 //pub mod network;
 use core::panic;
 use serde::{Deserialize, Serialize};
+pub mod label;
 pub mod link;
 pub mod node;
 pub mod position;
@@ -11,6 +12,7 @@ pub use node::junction::{Junction, JunctionBuilder};
 pub use node::reservoir::{Reservoir, ReservoirBuilder};
 pub use node::tank::{Tank, TankBuilder};
 
+pub use label::Label;
 pub use link::pipe::Pipe;
 pub use link::pump::Pump;
 pub use link::valve::Valve;
@@ -52,6 +54,7 @@ pub struct Network {
     pub pipes: Option<Vec<Pipe>>,
     pub pumps: Option<Vec<Pump>>,
     pub valves: Option<Vec<Valve>>,
+    pub labels: Option<Vec<Label>>,
     pub options: Options,
 }
 
@@ -106,6 +109,7 @@ impl Default for Network {
             pipes: None,
             pumps: None,
             valves: None,
+            labels: None,
             options: Options::default(),
         }
     }
@@ -120,6 +124,7 @@ pub struct NetworkBuilder {
     pub pipes: Option<Vec<Pipe>>,
     pub pumps: Option<Vec<Pump>>,
     pub valves: Option<Vec<Valve>>,
+    pub labels: Option<Vec<Label>>,
     pub options: Options,
 }
 
@@ -133,6 +138,7 @@ impl NetworkBuilder {
             pipes: None,
             pumps: None,
             valves: None,
+            labels: None,
             options: Options::default(),
         };
 
@@ -179,6 +185,11 @@ impl NetworkBuilder {
         self
     }
 
+    pub fn set_labels(mut self, labels: Option<Vec<Label>>) -> Self {
+        self.labels = labels;
+        self
+    }
+
     pub fn build(self) -> Network {
         // ------------ update flow unit ---------------
 
@@ -192,6 +203,7 @@ impl NetworkBuilder {
             pumps: self.pumps,
             valves: self.valves,
             options: self.options,
+            labels: self.labels,
         };
         //-----------------------------------------
         // update node and pipe flow_unit:

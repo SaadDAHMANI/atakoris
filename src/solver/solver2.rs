@@ -101,7 +101,7 @@ impl Solver2 {
 
         self.flow_unit_multiplayer = Solver2::conversion_2is_multiplayer(network);
 
-        dbg!(self.flow_unit_multiplayer);
+        // dbg!(self.flow_unit_multiplayer);
 
         if no == 0 {
             return Err(SolverError::NoWaterSourceErr);
@@ -175,10 +175,6 @@ impl Solver2 {
 
         // step 0 : compute Qmax
         let qmax: f64 = q.iter().sum();
-        /*
-        for i in 0..q.len() {
-           qmax+=q[i];
-        } */
 
         // compute delta Q
         let deltaq = qmax / self.m;
