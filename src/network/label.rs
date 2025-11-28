@@ -33,6 +33,10 @@ impl Label {
         }
     }
 
+    pub fn set_position(mut self, pos: Position) -> Self {
+        self.pos = pos;
+        self
+    }
     pub fn update_by(&mut self, s: &str) {
         for (i, c) in s.chars().enumerate() {
             if i < 25 {
