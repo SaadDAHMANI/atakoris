@@ -8,9 +8,11 @@ pub mod solver2;
 pub use solver::Solver;
 pub use solver2::Solver2;
 
+use serde::{Deserialize, Serialize};
+
 use thiserror::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct AnalysisResult {
     pub iterations: usize,
     pub final_flow_error: f64,

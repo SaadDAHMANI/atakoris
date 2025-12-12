@@ -11,6 +11,7 @@
 // a21 : incidence matrix (self.junction_count x np)
 // a12 = transpose(a21) : incidence matrix (np x self.junction_count)
 
+use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::{
@@ -18,7 +19,7 @@ use crate::{
     SolverError, network::FlowUnits,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Solver2 {
     ///
     /// non-zero & strict positive m-value. Default value : m = 100, m includes in [10.0, 10.0^6].
