@@ -15,8 +15,8 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::{
-    AFD_FACTOR, AnalysisResult, CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR, Network,
-    SolverError, network::FlowUnits,
+    AFD_FACTOR, AnalysisResult, CMD_FACTOR, CMH_FACTOR, Junction, LPM_FACTOR, LPS_FACTOR, Network,
+    Node, SolverError, network::FlowUnits,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -114,6 +114,7 @@ impl Solver2 {
 
         Ok(())
     }
+
     ///
     /// Analyse the network,
     /// m_parameter in [10., 1000000.], default =100.0
@@ -290,6 +291,90 @@ impl Solver2 {
             }
         };
         // ====================================================================
+    }
+
+    fn compute_pda(&mut self, network: &mut Network) {
+        // -> Result<AnalysisResult, SolverError> {
+        // 1 Step 1 : Perform DDA simulation
+        let mut pda_net = network.clone();
+        let _ = self.compute(&mut pda_net);
+
+        let h_req: f64 = 20.0;
+        let h_min: f64 = 0.0;
+
+        let mut nj: usize = 0;
+        let mut capacity: usize = 0;
+
+        // --------------- check the required pressure ------------------------------------
+        let mut req_pressure_not_checked: bool = match pda_net.junctions.as_ref() {
+            None => true,
+            Some(jnctns) => {
+                nj = jnctns.len();
+                // --------------------------------------------------
+                capacity = jnctns
+                    .iter()
+                    .filter(|node| node.pressure().unwrap_or(0.0) < h_req)
+                    .count();
+
+                // -------------------------------------------
+                if capacity > 0 { true } else { false }
+            }
+        };
+
+        if req_pressure_not_checked {
+            let mut counter: usize = 0;
+            let mut changed_nodes: Vec<usize> = Vec::with_capacity(capacity);
+
+            while req_pressure_not_checked && counter < nj {
+                if let Some(mut jnctns) = pda_net.junctions.as_mut() {
+                    if let Some(nd_id) = self.pda_set_node_pressure_to_null(&mut jnctns) {
+                        changed_nodes.push(nd_id);
+                    }
+                };
+
+                let _ = self.compute(&mut pda_net);
+                if let Some(jnctns) = &pda_net.junctions {
+                    req_pressure_not_checked = jnctns
+                        .iter()
+                        .any(|node| node.pressure().unwrap_or(0.0) < h_req);
+                }
+                counter += 1;
+            }
+            // ----------------------------------------------------------------------------
+            let mut ke_vec: Vec<f64> = Vec::with_capacity(changed_nodes.len());
+            if let Some(nodes) = &network.junctions {
+                let gamma: f64 = 1.0 / nj as f64;
+                const EPSV: f64 = 0.0000001;
+                // ke computaion
+                for id in changed_nodes.into_iter() {
+                    if let Some(node) = nodes.iter().find(|nd| nd.id == id) {
+                        let ke = node.demand / ((h_req - h_min).powf(gamma) + EPSV);
+                        ke_vec.push(ke);
+                    }
+                }
+            }
+            // update node elevations
+            if let Some(nodes) = pda_net.junctions.as_mut() {
+                for nd in nodes.iter_mut() {
+                    nd.elevation += h_min;
+                }
+            }
+            // perform hydraulic simulation
+            let _ = self.compute(&mut pda_net);
+        }
+    }
+
+    #[allow(dead_code)]
+    fn pda_set_node_pressure_to_null(&mut self, junctions: &mut Vec<Junction>) -> Option<usize> {
+        if let Some(node_minp) = junctions.iter_mut().min_by(|n1, n2| {
+            n1.pressure()
+                .partial_cmp(&n2.pressure())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        }) {
+            node_minp.demand = 0.0f64;
+            return Some(node_minp.id);
+        }
+        None
     }
 
     ///
