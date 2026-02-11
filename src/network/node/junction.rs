@@ -13,6 +13,19 @@ pub struct Junction {
     pub name: Option<String>,
     pub head: Option<f64>,
     flow_unit: FlowUnits,
+
+    /// Actual out flow [PDA analysis].
+    outflow: f64,
+
+    /// The required pressure [PDA analysis].
+    pub required_pressure: f64,
+
+    /// The minimal pressure [PDA analysis].
+    pub minimal_pressure: f64,
+
+    /// The emitter coefficient  [PDA analysis].
+    pub emitter_coefficient: f64,
+
     #[cfg(feature = "optimization")]
     target_head: Option<f64>,
 }
@@ -30,11 +43,24 @@ impl Junction {
             #[cfg(feature = "optimization")]
             target_head: None,
             flow_unit: FlowUnits::default(),
+            //------------------------------------
+            outflow: f64::NAN,
+            required_pressure: 0.0,
+            minimal_pressure: 0.0,
+            emitter_coefficient: 1.0,
         }
     }
 
     pub fn set_name(&mut self, name: Option<String>) {
         self.name = name;
+    }
+
+    pub fn get_outflow(&self) -> f64 {
+        self.outflow
+    }
+
+    pub fn set_outflow(&mut self, value: f64) {
+        self.outflow = value;
     }
 
     #[cfg(feature = "optimization")]
@@ -185,6 +211,11 @@ impl JunctionBuilder {
 
             #[cfg(feature = "optimization")]
             target_head: self.target_head,
+            // ------ PDA -------
+            outflow: f64::NAN,
+            required_pressure: 0.0,
+            minimal_pressure: 0.0,
+            emitter_coefficient: 1.0,
         }
     }
 }
