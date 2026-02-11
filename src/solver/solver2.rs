@@ -356,9 +356,45 @@ impl Solver2 {
                     junctions[j].elevation += junctions[j].minimal_pressure;
                     junctions[j].demand =
                         junctions[j].emitter_coefficient * junctions[j].pressure().unwrap().powf(n);
+                    // junctions[j].set_outflow(junctions[j].demand);
                 }
+            };
+            // Perform a DDA simulation
+            if self.compute(&mut pda_net).is_err() {
+                return;
+            }
+
+            // check emitter junction
+            if Solver2::pda_check_emitter_nodes(pda_net.junctions.as_ref().unwrap(), &emitter_nodes)
+            {
+                // reste the network & update 0-demand emitter nodes
+
+                emitter_nodes = self.pda_reset_network(&mut pda_net, &emitter_nodes, &network);
+
+                // perform a DDA simulation
+                if self.compute(&mut pda_net).is_err() {
+                    return;
+                };
+            };
+
+            // check required pressure
+            if let Some(junctions) = pda_net.junctions.as_ref() {
+                stop_loop = Solver2::pda_check_required_pressure(junctions, &emitter_nodes);
+                //
+            } else {
+                stop_loop = true;
             }
         }
+    }
+
+    fn pda_check_required_pressure(junctions: &[Junction], emitter_nodes: &[usize]) -> bool {
+        for i in 0..emitter_nodes.len() {
+            let indx = emitter_nodes[i];
+            if junctions[indx].pressure().unwrap() < junctions[indx].minimal_pressure {
+                return false;
+            };
+        }
+        return true;
     }
 
     #[allow(dead_code)]
@@ -381,165 +417,47 @@ impl Solver2 {
         None
     }
 
-    fn compute_pda(&mut self, network: &mut Network) {
-        // -> Result<AnalysisResult, SolverError> {
-        // 1 Step 1 : Perform DDA simulation
-        // Quit if no junction
-        if network.junctions.is_none() {
-            return;
-        }
-
-        let mut pda_net = network.clone();
-        let _ = self.compute(&mut pda_net);
-
-        let nj: f64 = 0.54;
-        let mut max_checks: usize = 0;
-        let mut capacity: usize = 0;
-
-        // --------------- check the required pressure ------------------------------------
-        let mut req_pressure_not_checked: bool = match pda_net.junctions.as_ref() {
-            None => true,
-            Some(jnctns) => {
-                max_checks = jnctns.len();
-                // --------------------------------------------------
-                capacity = jnctns
-                    .iter()
-                    .filter(|node| node.pressure().unwrap_or(0.0) < node.required_pressure)
-                    .count();
-
-                // -------------------------------------------
-                if capacity > 0 { true } else { false }
-            }
-        };
-
-        let mut emitter_nodes: Vec<usize> = Vec::with_capacity(capacity);
-
-        if req_pressure_not_checked {
-            let mut counter: usize = 0;
-            while req_pressure_not_checked && counter < max_checks {
-                if let Some(mut jnctns) = pda_net.junctions.as_mut() {
-                    if let Some(nd_index) = self.pda_set_node_pressure_to_null(&mut jnctns) {
-                        emitter_nodes.push(nd_index);
-                    }
-                };
-
-                let _ = self.compute(&mut pda_net);
-                if let Some(jnctns) = &pda_net.junctions {
-                    req_pressure_not_checked = jnctns
-                        .iter()
-                        .any(|node| node.pressure().unwrap_or(0.0) < node.required_pressure);
-                }
-                counter += 1;
-            }
-        }
-
-        // ---------------------------------------------------------------------------
-        let mut stop_loop: bool = false;
-        while stop_loop == false {
-            let mut ke_vec: Vec<f64> = Vec::with_capacity(emitter_nodes.len());
-            if let Some(nodes) = &network.junctions {
-                let gamma: f64 = 1.0 / nj as f64;
-
-                // ke computaion
-                for id in emitter_nodes.iter() {
-                    if let Some(node) = nodes.iter().find(|nd| nd.id == *id) {
-                        let denomenator = f64::max(
-                            (node.required_pressure - node.minimal_pressure).powf(gamma),
-                            0.00001,
-                        );
-
-                        let ke = node.demand / denomenator;
-                        ke_vec.push(ke);
-                    }
-                }
-            }
-            /*
-                                    // update node elevations
-                                    if let Some(nodes) = pda_net.junctions.as_mut() {
-                                        for indx in emitter_nodes.iter() {
-                                            let i = *indx;
-                                            nodes[i].elevation += nodes[i].minimal_pressure;
-                                        }
-                                    }
-
-                        // perform hydraulic simulation
-                        let _ = self.compute(&mut pda_net);
-
-                        let check_emitter_nodes: bool =
-                            self.pda_check_emitter_nodes(&pda_net.junctions.as_ref().unwrap(), &emitter_nodes);
-
-                        if check_emitter_nodes {
-                            self.pda_reset_network(&mut pda_net, &emitter_nodes);
-                        }
-
-            // check min pressure
-            let check_min_p = pda_net
-                .junctions
-                .unwrap()
-                .iter()
-                .any(|nd| nd.pressure().unwrap() < nd.minimal_pressure);
-                */
-        }
-    }
-
-    fn pda_reset_network(&mut self, pda_net: &mut Network, emitter_nodes: &[usize]) {
+    fn pda_reset_network(
+        &mut self,
+        pda_net: &mut Network,
+        emitter_nodes: &[usize],
+        origin_net: &Network,
+    ) -> Vec<usize> {
+        let mut new_emitter_nodes: Vec<usize> = Vec::new();
         // rest elevation
-        if let Some(nodes) = pda_net.junctions.as_mut() {
-            for indx in emitter_nodes.iter() {
-                let i = *indx;
-                nodes[i].elevation -= nodes[i].minimal_pressure;
-                if nodes[i].pressure().unwrap_or(1.0) < 0.0 || nodes[i].get_outflow() < 0.0 {
-                    nodes[i].set_outflow(0.0);
+        if let Some(origin_nodes) = origin_net.junctions.as_ref() {
+            if let Some(nodes) = pda_net.junctions.as_mut() {
+                for indx in 0..emitter_nodes.len() {
+                    let i = emitter_nodes[indx];
+                    nodes[i].elevation -= nodes[i].minimal_pressure;
+                    if nodes[i].pressure().unwrap() < 0.0 || nodes[i].demand < 0.0 {
+                        nodes[i].demand = 0.0;
+                        new_emitter_nodes.push(i);
+                    }
+                    // set outflow as demand if excess
+                    if nodes[i].demand > origin_nodes[i].demand {
+                        nodes[i].demand = origin_nodes[i].demand;
+                    }
                 }
-                // set outflow as demand if excess
-                if nodes[i].get_outflow() > nodes[i].demand {
-                    let q = nodes[i].demand;
-                    nodes[i].set_outflow(q);
-                }
-            }
+            };
         };
-        // perform a DDA simulation
-        let _ = self.compute(pda_net);
+        new_emitter_nodes
     }
 
-    fn pda_check_emitter_nodes(&mut self, junctions: &[Junction], emitter_nodes: &[usize]) -> bool {
+    fn pda_check_emitter_nodes(junctions: &[Junction], emitter_nodes: &[usize]) -> bool {
         // 1. check if negative pressure at emitter junctions
-        for emtr_id in emitter_nodes.iter() {
-            for jn in junctions.iter() {
-                if jn.id == *emtr_id {
-                    // check negative pressure
-                    if jn.pressure().unwrap_or(1.0) < 0.0 {
-                        return true;
-                    };
-                    // check negative flow (negative demand) or excess flow
-                    if jn.demand < 0.0 || jn.get_outflow() > jn.demand {
-                        return true;
-                    };
-                }
+        for i in 0..emitter_nodes.len() {
+            let j = emitter_nodes[i];
+
+            // check negative pressure
+            if junctions[j].pressure().unwrap() < 0.0 {
+                return true;
+            }
+            if junctions[j].demand < 0.0 {
+                return true;
             }
         }
         return false;
-    }
-
-    #[allow(dead_code)]
-    fn pda_set_node_pressure_to_null(&mut self, junctions: &mut [Junction]) -> Option<usize> {
-        let mut emitter_node_id: Option<usize> = None;
-
-        if let Some(node_minp) = junctions.iter_mut().min_by(|n1, n2| {
-            n1.pressure()
-                .partial_cmp(&n2.pressure())
-                .unwrap_or(std::cmp::Ordering::Equal)
-        }) {
-            node_minp.demand = 0.0f64;
-            emitter_node_id = Some(node_minp.id);
-        }
-
-        if let Some(id) = emitter_node_id {
-            if let Some((index, _)) = junctions.iter().enumerate().find(|(_i, nd)| nd.id == id) {
-                return Some(index);
-            }
-        }
-        None
     }
 
     ///
