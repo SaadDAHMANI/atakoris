@@ -749,13 +749,14 @@ pub mod benchmark {
     }
 
     /// Network 1 from Todini et al.,2021. Pressure flow-Based Algorithms for Pressure-Driven analysis of Water Distrinbution Networks
+    #[allow(dead_code)]
     pub fn pda_network_1() -> Network {
         let mut j2 = JunctionBuilder::new()
             .set_id(2)
             .set_elevation(90.0)
             .set_demand(120.0)
             .build();
-        j2.required_pressure = 10.0;
+        j2.required_pressure = 110.0 - 90.0;
         j2.minimal_pressure = 0.0;
         //----------------------------------------
         let mut j3 = JunctionBuilder::new()
@@ -763,7 +764,7 @@ pub mod benchmark {
             .set_elevation(88.0)
             .set_demand(120.0)
             .build();
-        j3.required_pressure = 10.0;
+        j3.required_pressure = 108.0 - 88.0;
         j3.minimal_pressure = 0.0;
         //----------------------------------------
         let mut j4 = JunctionBuilder::new()
@@ -771,7 +772,7 @@ pub mod benchmark {
             .set_elevation(90.0)
             .set_demand(180.0)
             .build();
-        j4.required_pressure = 10.0;
+        j4.required_pressure = 110.0 - 90.0;
         j4.minimal_pressure = 0.0;
         //----------------------------------------
         let mut j5 = JunctionBuilder::new()
@@ -779,7 +780,7 @@ pub mod benchmark {
             .set_elevation(85.0)
             .set_demand(240.0)
             .build();
-        j5.required_pressure = 10.0;
+        j5.required_pressure = 105.0 - 85.0;
         j5.minimal_pressure = 0.0;
         //----------------------------------------
         let p1 = PipeBuilder::new()
@@ -787,6 +788,8 @@ pub mod benchmark {
             .set_length(1000.0)
             .set_diameter(400.0)
             .set_minorloss(130.0)
+            .set_start(1)
+            .set_end(2)
             .build();
 
         let p2 = PipeBuilder::new()
@@ -794,25 +797,32 @@ pub mod benchmark {
             .set_length(1000.0)
             .set_diameter(350.0)
             .set_minorloss(130.0)
+            .set_start(2)
+            .set_end(3)
             .build();
         let p3 = PipeBuilder::new()
             .set_id(3)
             .set_length(1000.0)
             .set_diameter(300.0)
             .set_minorloss(130.0)
+            .set_start(3)
+            .set_end(4)
             .build();
         let p4 = PipeBuilder::new()
             .set_id(4)
             .set_length(1000.0)
             .set_diameter(300.0)
             .set_minorloss(130.0)
+            .set_start(4)
+            .set_end(5)
             .build();
+
+        let r1 = ReservoirBuilder::new().set_id(1).set_head(100.0).build();
 
         let options = OptionsBuilder::new()
             .set_flow_unit(FlowUnits::Cmh)
             .set_headlossformula(HeadlossFormula::Hw)
             .build();
-        let r1 = ReservoirBuilder::new().set_id(1).set_head(100.0).build();
 
         let junctions = Some(vec![j2, j3, j4, j5]);
         let pipes = Some(vec![p1, p2, p3, p4]);

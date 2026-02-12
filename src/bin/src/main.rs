@@ -44,7 +44,8 @@ fn main() {
     // solver1_test_network2_todini();
 
     println!("========================");
-    pda_network_1();
+
+    pda_test_network1();
 
     // solver2_test_network2_todini();
     //
@@ -64,19 +65,39 @@ fn main() {
     //  solver2_test_modena_net();
 }
 
-fn pda_test_net1() {
+fn pda_test_network1() {
     let mut net1 = benchmark::benchmark::pda_network_1();
     let m = Some(100.0f64);
     let target_error = Some(0.0001f64);
 
     let mut solver = Solver2::new(m, target_error);
+
     println!("-----------Ne 1 - DDA Analysis ----------");
-    if let Ok(result) = solver.compute(&mut net1) {
-        println!(
-            "iterations : {}, final_Q_err : {}, final_H_err : {}.",
-            result.iterations, result.final_flow_error, result.final_head_error
-        );
+    match solver.compute(&mut net1) {
+        Ok(result) => {
+            println!(
+                "iterations : {}, final_Q_err : {}, final_H_err : {}.",
+                result.iterations, result.final_flow_error, result.final_head_error
+            );
+
+            if let Some(junctions) = net1.junctions.as_ref() {
+                for jn in junctions.iter() {
+                    println!("{}", jn.to_string());
+                }
+            }
+        }
+        Err(solver_err) => println!("Error !! : {}", solver_err.to_string()),
+    };
+
+    println!("-----------Ne 1 - PDA Analysis ----------");
+    solver.compute_pda(&mut net1);
+    /*
+    if let Some(junctions) = net1.junctions {
+        for jn in junctions.iter() {
+            println!("{}", jn.to_string());
+        }
     }
+    */
 }
 
 #[allow(dead_code)]

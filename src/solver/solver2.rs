@@ -294,7 +294,7 @@ impl Solver2 {
     }
 
     #[allow(dead_code)]
-    fn compute_pda(&mut self, network: &mut Network) {
+    pub fn compute_pda(&mut self, network: &mut Network) {
         // ------ Block 0: ------------------------------------------
         if network.junctions.is_none() {
             return;
@@ -309,6 +309,21 @@ impl Solver2 {
         let n = 0.54f64;
         let gamma = 1.0 / n;
 
+        let mut target_demand: Vec<f64> = Vec::new();
+
+        let mut max_counter: usize = match pda_net.junctions.as_ref() {
+            None => 0,
+            Some(nodes) => {
+                let nj = nodes.len();
+                for i in 0..nj {
+                    target_demand.push(nodes[i].demand);
+                }
+                nj
+            }
+        };
+
+        let mut counter: usize = 0;
+
         // ------ Block 1: -------------------------------------------
         let mut pressures_are_not_ok = pda_net
             .junctions
@@ -316,7 +331,7 @@ impl Solver2 {
             .unwrap()
             .iter()
             .any(|nd| nd.pressure().unwrap() < nd.required_pressure);
-        while pressures_are_not_ok {
+        while pressures_are_not_ok && counter < max_counter {
             // Find the node with the max ppressure drop:
             let mut jn_index: Option<usize> = None;
             if let Some(junctions) = &pda_net.junctions {
@@ -331,19 +346,24 @@ impl Solver2 {
             if self.compute(&mut pda_net).is_err() {
                 return;
             };
-            // check if any pressure below required pressure
 
+            // check if any pressure below required pressurei
             pressures_are_not_ok = pda_net
                 .junctions
                 .as_ref()
                 .unwrap()
                 .iter()
                 .any(|nd| nd.pressure().unwrap() < nd.required_pressure);
+            counter += 1;
         }
-        // ------- Block 2 -------------------------------------------
+        // ----------------------------------------------------------
+        println!("Counter stage 1 : {}", counter);
+        counter = 0;
+        max_counter *= 10;
+        // ------- Block 2 ------------------------------------------
         let mut stop_loop: bool = false;
 
-        while stop_loop == false {
+        while stop_loop == false && counter < max_counter {
             // compute Ke for emitter junctions
             if let Some(junctions) = pda_net.junctions.as_mut() {
                 for i in 0..emitter_nodes.len() {
@@ -351,15 +371,18 @@ impl Solver2 {
                     let value = f64::max(
                         (junctions[j].required_pressure - junctions[j].minimal_pressure)
                             .powf(gamma),
-                        0.00001,
+                        0.000000000001,
                     );
-                    junctions[j].emitter_coefficient = junctions[j].demand / value;
+                    junctions[j].emitter_coefficient = target_demand[j] / value;
                     junctions[j].elevation += junctions[j].minimal_pressure;
                     junctions[j].demand =
                         junctions[j].emitter_coefficient * junctions[j].pressure().unwrap().powf(n);
+                    println!("index = {} . Ke : {}", j, junctions[j].emitter_coefficient);
+
                     // junctions[j].set_outflow(junctions[j].demand);
                 }
             };
+
             // Perform a DDA simulation
             if self.compute(&mut pda_net).is_err() {
                 return;
@@ -384,6 +407,23 @@ impl Solver2 {
                 //
             } else {
                 stop_loop = true;
+            }
+            counter += 1;
+        }
+
+        println!("Conter stage 2 : {}", counter);
+
+        // copy results:
+        if let Some(junctions) = pda_net.junctions {
+            for jn in junctions.iter() {
+                println!(
+                    "jn - id: {}, q = {}, Ke = {}. H = {:?},  Pressure = {:?}",
+                    jn.id,
+                    jn.demand,
+                    jn.emitter_coefficient,
+                    jn.head,
+                    jn.pressure()
+                );
             }
         }
     }
@@ -430,8 +470,8 @@ impl Solver2 {
             if let Some(nodes) = pda_net.junctions.as_mut() {
                 for indx in 0..emitter_nodes.len() {
                     let i = emitter_nodes[indx];
-                    nodes[i].elevation -= nodes[i].minimal_pressure;
                     if nodes[i].pressure().unwrap() < 0.0 || nodes[i].demand < 0.0 {
+                        nodes[i].elevation -= nodes[i].minimal_pressure;
                         nodes[i].demand = 0.0;
                         new_emitter_nodes.push(i);
                     }
