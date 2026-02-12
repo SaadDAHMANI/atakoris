@@ -44,8 +44,10 @@ fn main() {
     // solver1_test_network2_todini();
 
     println!("========================");
+    pda_network_1();
 
-    solver2_test_network2_todini();
+    // solver2_test_network2_todini();
+    //
     //------------------------------------------------
     //  show_static_wdn();
 
@@ -60,6 +62,21 @@ fn main() {
     // println!("Solver1 =================================");
 
     //  solver2_test_modena_net();
+}
+
+fn pda_test_net1() {
+    let mut net1 = benchmark::benchmark::pda_network_1();
+    let m = Some(100.0f64);
+    let target_error = Some(0.0001f64);
+
+    let mut solver = Solver2::new(m, target_error);
+    println!("-----------Ne 1 - DDA Analysis ----------");
+    if let Ok(result) = solver.compute(&mut net1) {
+        println!(
+            "iterations : {}, final_Q_err : {}, final_H_err : {}.",
+            result.iterations, result.final_flow_error, result.final_head_error
+        );
+    }
 }
 
 #[allow(dead_code)]

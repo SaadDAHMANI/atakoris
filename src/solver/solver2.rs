@@ -293,7 +293,8 @@ impl Solver2 {
         // ====================================================================
     }
 
-    fn compute_pda_2(&mut self, network: &mut Network) {
+    #[allow(dead_code)]
+    fn compute_pda(&mut self, network: &mut Network) {
         // ------ Block 0: ------------------------------------------
         if network.junctions.is_none() {
             return;
