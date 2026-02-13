@@ -521,6 +521,165 @@ pub mod benchmark {
     }
 
     ///
+    /// Two-Loop Network for PDA analysis (from Ravi et al., 2019, Analysis of water distribution network under pressure-deficient conditions through emitter setting).
+    ///
+    #[allow(dead_code)]
+    pub fn pda_network_2loop() -> Network {
+        let r1: Tank = TankBuilder::new()
+            .set_id(1)
+            .set_elevation(100.0)
+            .set_initial_level(0.0)
+            .set_name("Reservoir R-1")
+            .build();
+
+        let mut j2: Junction = JunctionBuilder::new()
+            .set_id(2)
+            .set_name("J-2")
+            .set_elevation(90.0)
+            .set_demand(25.0)
+            .build();
+
+        let mut j3 = j2.clone();
+        j3.id = 3;
+        j3.elevation = 90.0;
+        j3.demand = 25.00;
+        j3.name = Some("J-3".to_owned());
+
+        let mut j4 = j2.clone();
+        j4.id = 4;
+        j4.elevation = 88.0;
+        j4.demand = 25.0;
+        j4.name = Some("J-4".to_owned());
+
+        let mut j5: Junction = JunctionBuilder::new()
+            .set_id(5)
+            .set_name("J-5")
+            .set_elevation(88.0)
+            .set_demand(25.00)
+            .build();
+
+        let mut j6: Junction = JunctionBuilder::new()
+            .set_id(6)
+            .set_name("J-6")
+            .set_elevation(85.0)
+            .set_demand(25.0)
+            .build();
+
+        let mut j7: Junction = JunctionBuilder::new()
+            .set_id(7)
+            .set_name("J-7")
+            .set_elevation(85.0)
+            .set_demand(25.0)
+            .build();
+
+        let mut p1: Pipe = PipeBuilder::new()
+            .set_id(1)
+            .set_name("P-1")
+            .set_start(r1.id)
+            .set_end(j2.id)
+            .set_diameter(350.0)
+            .set_length(1000.0)
+            .set_roughness(130.0)
+            .set_status(LinkStatus::Open)
+            .set_check_valve(false)
+            .set_minorloss(0.0)
+            .build();
+
+        let mut p2: Pipe = p1.clone();
+        p2.id = 2;
+        p2.name = Some("P-2".to_owned());
+        p2.start = 2;
+        p2.end = 3;
+
+        let mut p3: Pipe = p1.clone();
+        p3.id = 3;
+        p3.name = Some("P-3".to_owned());
+        p3.start = 2;
+        p3.end = 4;
+
+        let mut p4: Pipe = p1.clone();
+        p4.id = 4;
+        p4.name = Some("P-4".to_owned());
+        p4.start = 3;
+        p4.end = 5;
+
+        let mut p5: Pipe = p1.clone();
+        p5.id = 5;
+        p5.name = Some("P-5".to_owned());
+        p5.start = 4;
+        p5.end = 5;
+
+        let mut p6: Pipe = p1.clone();
+        p6.id = 6;
+        p6.name = Some("P-6".to_owned());
+        p6.start = 4;
+        p6.end = 6;
+
+        let mut p7: Pipe = p1.clone();
+        p7.id = 7;
+        p7.name = Some("P-7".to_owned());
+        p7.start = 5;
+        p7.end = 7;
+
+        let mut p8: Pipe = p1.clone();
+        p8.id = 8;
+        p8.name = Some("P-8".to_owned());
+        p8.start = 6;
+        p8.end = 7;
+
+        let options: Options = OptionsBuilder::new()
+            .set_flow_unit(FlowUnits::Lps)
+            .set_headlossformula(HeadlossFormula::Hw)
+            .build();
+
+        //----------------
+        p1.diameter = 350.0;
+
+        p2.diameter = 300.0;
+        p3.diameter = 300.0;
+
+        p4.diameter = 250.0;
+        p5.diameter = 250.0;
+
+        p6.diameter = 200.0;
+        p7.diameter = 200.0;
+        p8.diameter = 200.0;
+
+        //---- scenarion 1 ---------------
+        j2.required_pressure = 10.0;
+        j3.required_pressure = 10.0;
+        j4.required_pressure = 12.0;
+        j5.required_pressure = 12.0;
+        j6.required_pressure = 15.0;
+        j7.required_pressure = 15.0;
+
+        j2.minimal_pressure = 0.0;
+        j3.minimal_pressure = 0.0;
+        j4.minimal_pressure = 0.0;
+
+        j5.minimal_pressure = 0.0;
+        j6.minimal_pressure = 0.0;
+        j7.minimal_pressure = 0.0;
+
+        p3.status = LinkStatus::Closed;
+
+        //--------------------------------
+
+        let ts = vec![r1];
+        let js = vec![j2, j3, j4, j5, j6, j7];
+        let ps = vec![p1, p2, p3, p4, p5, p6, p7, p8];
+
+        let netw: Network = NetworkBuilder::new()
+            .set_title(Some("Network Two-loop".into()))
+            .set_junctions(Some(js))
+            .set_tanks(Some(ts))
+            .set_pipes(Some(ps))
+            .set_options(options)
+            .build();
+        netw
+    }
+
+    ///
     /// Kadu Network.
     ///
     #[allow(dead_code)]

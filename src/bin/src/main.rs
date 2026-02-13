@@ -45,7 +45,8 @@ fn main() {
 
     println!("========================");
 
-    pda_test_network1();
+    //    pda_test_network1();
+    pda_test_2_loop_network();
 
     // solver2_test_network2_todini();
     //
@@ -65,6 +66,7 @@ fn main() {
     //  solver2_test_modena_net();
 }
 
+#[allow(dead_code)]
 fn pda_test_network1() {
     let mut net1 = benchmark::benchmark::pda_network_1();
     let m = Some(100.0f64);
@@ -98,6 +100,54 @@ fn pda_test_network1() {
         }
     }
     */
+}
+
+fn pda_test_2_loop_network() {
+    let mut net1 = benchmark::benchmark::pda_network_2loop();
+    let m = Some(100.0f64);
+    let target_error = Some(0.0001f64);
+
+    let mut solver = Solver2::new(m, target_error);
+
+    println!("-----------Ne 1 - DDA Analysis ----------");
+    match solver.compute(&mut net1) {
+        Ok(result) => {
+            println!(
+                "iterations : {}, final_Q_err : {}, final_H_err : {}.",
+                result.iterations, result.final_flow_error, result.final_head_error
+            );
+
+            if let Some(junctions) = net1.junctions.as_ref() {
+                for jn in junctions.iter() {
+                    println!(
+                        "jn: {}, q*: {}, OutFlow : {}, H : {:?}, P: {:?}",
+                        jn.id,
+                        jn.demand,
+                        jn.get_outflow(),
+                        jn.head,
+                        jn.pressure()
+                    );
+                }
+            }
+        }
+        Err(solver_err) => println!("Error !! : {}", solver_err.to_string()),
+    };
+
+    println!("-----------Ne 1 - PDA Analysis ----------");
+    solver.compute_pda(&mut net1);
+
+    if let Some(junctions) = net1.junctions {
+        for jn in junctions.iter() {
+            println!(
+                "PDA - jn: {}, q: {}, Outfloww: {:?}, H : {:?}, P: {:?}",
+                jn.id,
+                jn.demand,
+                jn.get_outflow(),
+                jn.head,
+                jn.pressure()
+            );
+        }
+    }
 }
 
 #[allow(dead_code)]

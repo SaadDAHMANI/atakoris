@@ -347,6 +347,8 @@ impl Solver2 {
                 return;
             };
 
+            Solver2::print_junctions(&pda_net, Some("pda_net - bloc 1"));
+
             // check if any pressure below required pressurei
             pressures_are_not_ok = pda_net
                 .junctions
@@ -415,19 +417,34 @@ impl Solver2 {
 
         // copy results:
         if let Some(junctions) = pda_net.junctions {
+            if let Some(origin_nodes) = network.junctions.as_mut() {
+                for i in 0..origin_nodes.len() {
+                    origin_nodes[i].set_outflow(junctions[i].demand);
+                    origin_nodes[i].emitter_coefficient = junctions[i].emitter_coefficient;
+                    origin_nodes[i].head = junctions[i].head;
+                }
+            };
+        }
+    }
+    fn print_junctions(network: &Network, msg: Option<&str>) {
+        if let Some(msg) = msg {
+            println!("------ {} -------", msg);
+        }
+        if let Some(junctions) = network.junctions.as_ref() {
             for jn in junctions.iter() {
                 println!(
-                    "jn - id: {}, q = {}, Ke = {}. H = {:?},  Pressure = {:?}",
+                    "jn - id: {}, q = {}, outflow: {}, Ke = {}. H = {:?},  Pressure = {:?}",
                     jn.id,
                     jn.demand,
+                    jn.get_outflow(),
                     jn.emitter_coefficient,
                     jn.head,
                     jn.pressure()
                 );
             }
+            println!("------------------------------------------");
         }
     }
-
     fn pda_check_required_pressure(junctions: &[Junction], emitter_nodes: &[usize]) -> bool {
         for i in 0..emitter_nodes.len() {
             let indx = emitter_nodes[i];
