@@ -15,8 +15,8 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::{
-    AFD_FACTOR, AnalysisResult, CMD_FACTOR, CMH_FACTOR, Junction, LPM_FACTOR, LPS_FACTOR, Network,
-    Node, SolverError, network::FlowUnits,
+    network::FlowUnits, AnalysisResult, Junction, Network, Node, SolverError, AFD_FACTOR,
+    CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -232,8 +232,10 @@ impl Solver2 {
 
             if check_q_err.0 {
                 let check_h_err = self.check_convergence(&_headsh, &_previous_h);
-                final_err_h = check_h_err.1;
-                stoploop = true;
+                if check_h_err.0 {
+                    final_err_h = check_h_err.1;
+                    stoploop = true;
+                };
             };
 
             final_err_q = check_q_err.1;
