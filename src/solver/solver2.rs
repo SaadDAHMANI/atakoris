@@ -82,7 +82,7 @@ impl Solver2 {
     pub fn set_target_error(&mut self, err_value: f64) {
         self.target_error = f64::max(err_value, 0.0000000000001);
     }
-    pub fn get_version(&self) -> &'static str {
+    pub fn get_version() -> &'static str {
         "0.1.4"
     }
 
