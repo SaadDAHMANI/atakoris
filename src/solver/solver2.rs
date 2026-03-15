@@ -51,7 +51,7 @@ impl Solver2 {
         };
 
         let m_value = match m_parameter {
-            None => 100.0,
+            None => 1000.0,
             Some(m) => f64::min(m, 1000000.0).max(10.0),
         };
 
@@ -232,10 +232,14 @@ impl Solver2 {
 
             if check_q_err.0 {
                 let check_h_err = self.check_convergence(&_headsh, &_previous_h);
+                /*
                 if check_h_err.0 {
                     final_err_h = check_h_err.1;
                     stoploop = true;
                 };
+                */
+                final_err_h = check_h_err.1;
+                stoploop = true;
             };
 
             final_err_q = check_q_err.1;
@@ -1099,7 +1103,7 @@ impl Solver2 {
 impl Default for Solver2 {
     fn default() -> Self {
         Solver2 {
-            m: 100.0,
+            m: 1000.0,
             n: 1.852f64,
             target_error: 0.001,
             junction_count: 0,
