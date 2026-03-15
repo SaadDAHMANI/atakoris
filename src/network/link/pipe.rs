@@ -3,9 +3,9 @@ use crate::{CMH_FACTOR, FlowUnits, LPM_FACTOR, LPS_FACTOR, network::Position};
 use super::*;
 use serde::{Deserialize, Serialize};
 // ----------------------- Pipe -----------------------------
-const CHW: f64 = 10.65;
+// const CHW: f64 = 10.65;
 // const CHW: f64 = 10.5088;
-// const CHW: f64 = 10.6744;
+const CHW: f64 = 10.674;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Pipe {
@@ -59,8 +59,7 @@ impl Pipe {
 
     pub fn resistance(&self) -> f64 {
         if self.status == LinkStatus::Open {
-            (CHW * self.length)
-                / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.8704))
+            (CHW * self.length) / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.871))
         } else {
             99.99f64.powi(20)
         }
@@ -74,11 +73,11 @@ impl Pipe {
                     99.99f64.powi(20)
                 } else {
                     (CHW * self.length)
-                        / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.8704))
+                        / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.871))
                 }
             } else {
                 (CHW * self.length)
-                    / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.8704))
+                    / (self.roughness.powf(1.852) * (self.diameter * 0.001).powf(4.871))
             }
         } else {
             99.99f64.powi(20)

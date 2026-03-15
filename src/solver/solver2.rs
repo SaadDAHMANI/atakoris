@@ -15,8 +15,8 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::{
-    network::FlowUnits, AnalysisResult, Junction, Network, Node, SolverError, AFD_FACTOR,
-    CMD_FACTOR, CMH_FACTOR, LPM_FACTOR, LPS_FACTOR,
+    AFD_FACTOR, AnalysisResult, CMD_FACTOR, CMH_FACTOR, Junction, LPM_FACTOR, LPS_FACTOR, Network,
+    Node, SolverError, network::FlowUnits,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -1101,7 +1101,7 @@ impl Default for Solver2 {
         Solver2 {
             m: 100.0,
             n: 1.852f64,
-            target_error: 0.0001,
+            target_error: 0.001,
             junction_count: 0,
             tank_count: 0,
             reservoir_count: 0,
