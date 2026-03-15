@@ -3,7 +3,7 @@ use crate::{CMH_FACTOR, FlowUnits, LPM_FACTOR, LPS_FACTOR, network::Position};
 use super::*;
 use serde::{Deserialize, Serialize};
 // ----------------------- Pipe -----------------------------
-const CHW: f64 = 10.65;
+const CHW: f64 = 10.655;
 // const CHW: f64 = 10.5088;
 // const CHW: f64 = 10.674;
 
