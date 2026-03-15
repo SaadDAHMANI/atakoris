@@ -83,7 +83,7 @@ impl Solver2 {
         self.target_error = f64::max(err_value, 0.0000000000001);
     }
     pub fn get_version(&self) -> &'static str {
-        "0.1.3"
+        "0.1.4"
     }
 
     fn init_solver(&mut self, network: &Network) -> Result<(), SolverError> {
