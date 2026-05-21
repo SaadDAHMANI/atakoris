@@ -157,8 +157,8 @@ impl Solver2 {
             return Err(SolverError::EmptyLinksError);
         } //return Option::None;}
 
-        let mut iter: usize = 0;
-        let itermax: usize = 20;
+        let mut iter: f64 = 0.0;
+        let itermax: f64 = 40.0;
         let mut final_err_q: f64 = f64::MAX;
         let mut final_err_h: f64 = f64::MAX;
 
@@ -179,14 +179,21 @@ impl Solver2 {
         let qmax: f64 = q.iter().sum();
 
         // compute delta Q
-        let deltaq = qmax / self.m;
+        // let  deltaq = qmax / self.m;
+        let mut deltaq: f64;
+
         for i in 0..np {
             _flowsq[i] = qmax;
         }
 
         let mut stoploop: bool = false;
 
+        let m_coef = 500.0; // self.m;
+
         while stoploop == false {
+            iter += 1.0;
+
+            deltaq = qmax / (m_coef * iter);
             //Updating A (eq13) & B (eq14):
             self.update_matrices_a_b(&network, &mut _a, &mut _b, &_flowsq, deltaq, self.n);
 
@@ -253,7 +260,7 @@ impl Solver2 {
                 _previous_h[j] = _headsh[j];
             }
 
-            iter += 1;
+            // iter += 1;
 
             if iter >= itermax {
                 stoploop = true;
@@ -262,7 +269,12 @@ impl Solver2 {
 
         self.update_network(network, &_flowsq, &_headsh);
         let time_analysis = chronos.elapsed();
-        let analysis_result = AnalysisResult::new(iter, final_err_q, final_err_h, time_analysis);
+        let analysis_result = AnalysisResult::new(
+            iter.round() as usize,
+            final_err_q,
+            final_err_h,
+            time_analysis,
+        );
         Ok(analysis_result)
     }
 
