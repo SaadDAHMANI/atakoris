@@ -179,8 +179,7 @@ impl Solver2 {
         let qmax: f64 = q.iter().sum();
 
         // compute delta Q
-        // let  deltaq = qmax / self.m;
-        let mut deltaq: f64;
+        let mut deltaq = qmax / self.m;
 
         for i in 0..np {
             _flowsq[i] = qmax;
@@ -188,12 +187,11 @@ impl Solver2 {
 
         let mut stoploop: bool = false;
 
-        let m_coef = 500.0; // self.m;
-
         while stoploop == false {
+            //----------------------
             iter += 1.0;
-
-            deltaq = qmax / (m_coef * iter);
+            deltaq /= iter;
+            // ---------------------
             //Updating A (eq13) & B (eq14):
             self.update_matrices_a_b(&network, &mut _a, &mut _b, &_flowsq, deltaq, self.n);
 
