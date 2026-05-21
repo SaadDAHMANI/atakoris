@@ -44,7 +44,7 @@ impl Junction {
             target_head: None,
             flow_unit: FlowUnits::default(),
             //------------------------------------
-            outflow: f64::NAN,
+            outflow: 0.0,
             required_pressure: 0.0,
             minimal_pressure: 0.0,
             emitter_coefficient: 1.0,
