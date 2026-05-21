@@ -15,15 +15,22 @@ pub struct Junction {
     flow_unit: FlowUnits,
 
     /// Actual out flow [PDA analysis].
+    #[serde(skip)]
     outflow: f64,
 
     /// The required pressure [PDA analysis].
+
+    #[serde(skip)]
     pub required_pressure: f64,
 
     /// The minimal pressure [PDA analysis].
+
+    #[serde(skip)]
     pub minimal_pressure: f64,
 
     /// The emitter coefficient  [PDA analysis].
+
+    #[serde(skip)]
     pub emitter_coefficient: f64,
 
     #[cfg(feature = "optimization")]
@@ -44,7 +51,7 @@ impl Junction {
             target_head: None,
             flow_unit: FlowUnits::default(),
             //------------------------------------
-            outflow: 0.0,
+            outflow: f64::NAN,
             required_pressure: 0.0,
             minimal_pressure: 0.0,
             emitter_coefficient: 1.0,
