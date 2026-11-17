@@ -801,42 +801,22 @@ fn solver2_test_pescara_net() {
                 ),
             };
 
-            /* match result {
-                None => println!("No results !!!"),
-                Some(wdn)=>{
-
-                    println!("___________[JUNCTIONS]____________");
-
-                    // match wdn.junctions {
-                    //     None => println!("no junctions !!!"),
-                    //     Some(nodes) => {
-                    //         for jn in nodes.iter() {
-                    //             println!("{}", jn.to_string())
-                    //         }
-                    //     },
-                    // };
-
-
-                    println!("___________[PIPES]____________");
-
-                    match wdn.pipes {
-                        None => println!("no pipes !!!"),
-                        Some(pipes) => {
-                            for elm in pipes.iter() {
-                                println!("{}", elm.to_string())
-                            }
-                        },
-                    };
-
-                }
-            } */
-
             println!("___________[JUNCTIONS]____________");
             match &net.junctions {
                 None => println!("no junctions !!!"),
                 Some(nodes) => {
                     for jn in nodes.iter() {
                         println!("id:{}, P: {:?}", jn.id, jn.pressure());
+                    }
+                }
+            };
+
+            println!("___________[PIPES]____________");
+            match &net.pipes {
+                None => println!("no pipes !!!"),
+                Some(lnks) => {
+                    for p in lnks.iter() {
+                        println!("id:{}, Q: {:?}", p.id, p.velocity());
                     }
                 }
             };
