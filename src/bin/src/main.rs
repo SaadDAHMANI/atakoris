@@ -28,6 +28,7 @@ use once_cell::sync::Lazy;
 static WDN: Lazy<Network> = Lazy::new(|| {
     match Network::read_from_file(
         "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Hanoi_optimal.inp",
+        // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Pescara.inp",
         // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Modena.inp",
         // "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Combined_Gravity_WDN.inp",
     ) {
@@ -45,8 +46,10 @@ fn main() {
 
     println!("========================");
 
+    solver2_test_pescara_net();
+
     //    pda_test_network1();
-    pda_test_2_loop_network();
+    // pda_test_2_loop_network();
 
     // solver2_test_network2_todini();
     //
@@ -102,6 +105,7 @@ fn pda_test_network1() {
     */
 }
 
+#[allow(dead_code)]
 fn pda_test_2_loop_network() {
     let mut net1 = benchmark::benchmark::pda_network_2loop();
     let m = Some(100.0f64);
@@ -771,6 +775,71 @@ fn solver2_test_modena_net() {
                     }
                 }
             };*/
+        }
+    };
+}
+
+#[allow(dead_code)]
+fn solver2_test_pescara_net() {
+    let inp_file = "/home/sd/Documents/Rust_apps/atakoris/src/bin/data/Pescara.inp".to_owned();
+
+    let wdn = InpFileParser::new(&inp_file).read();
+
+    match wdn {
+        Err(eror) => println!("Cannot read the file because of : {:?}.", eror),
+        Ok(mut net) => {
+            let mut solver: Solver2 = Solver2::new(Some(100.0), Some(0.0001));
+
+            match solver.compute(&mut net) {
+                Err(the_err) => println!("Err : {}", the_err),
+                Ok(result) => println!(
+                    "Q_error: \n {:?} \n; H_error : \n {:?}; Iterations : {:?}, Time : {:?}",
+                    result.final_flow_error,
+                    result.final_head_error,
+                    result.iterations,
+                    result.time_analysis
+                ),
+            };
+
+            /* match result {
+                None => println!("No results !!!"),
+                Some(wdn)=>{
+
+                    println!("___________[JUNCTIONS]____________");
+
+                    // match wdn.junctions {
+                    //     None => println!("no junctions !!!"),
+                    //     Some(nodes) => {
+                    //         for jn in nodes.iter() {
+                    //             println!("{}", jn.to_string())
+                    //         }
+                    //     },
+                    // };
+
+
+                    println!("___________[PIPES]____________");
+
+                    match wdn.pipes {
+                        None => println!("no pipes !!!"),
+                        Some(pipes) => {
+                            for elm in pipes.iter() {
+                                println!("{}", elm.to_string())
+                            }
+                        },
+                    };
+
+                }
+            } */
+
+            println!("___________[JUNCTIONS]____________");
+            match &net.junctions {
+                None => println!("no junctions !!!"),
+                Some(nodes) => {
+                    for jn in nodes.iter() {
+                        println!("id:{}, P: {:?}", jn.id, jn.pressure());
+                    }
+                }
+            };
         }
     };
 }
