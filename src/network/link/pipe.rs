@@ -88,7 +88,7 @@ impl Pipe {
     pub fn velocity(&self) -> Option<f64> {
         let v = match self.flow {
             Some(q) => Some(
-                (4.0 * q * self.get_flow_factor())
+                (4.0 * q.abs() * self.get_flow_factor())
                     / (std::f64::consts::PI * (self.diameter * 0.001).powi(2)),
             ),
             None => None,

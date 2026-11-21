@@ -191,12 +191,6 @@ impl Solver2 {
             //----------------------
             iter += 1.0;
             deltaq /= iter;
-
-            eprintln!(
-                "Atakoris -- iter : {}, m: {}, delta-Q: {}",
-                iter, self.m, deltaq
-            );
-
             // ---------------------
             //Updating A (eq13) & B (eq14):
             self.update_matrices_a_b(&network, &mut _a, &mut _b, &_flowsq, deltaq, self.n);
