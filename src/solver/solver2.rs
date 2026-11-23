@@ -40,9 +40,10 @@ pub struct Solver2 {
 
 impl Solver2 {
     ///
-    /// use this function to build new Solver
+    /// use this function to build new Solver.
     ///
     /// objective_error : minimal error flow and head computation (stopping criterion). If None, the default value (objective_error = 0.001) will be used.
+    /// The default 'm' value is = 100.0, updated at each iteration by m = m x iter.
     ///
     pub fn new(m_parameter: Option<f64>, target_error: Option<f64>) -> Self {
         let obj_err: f64 = match target_error {
@@ -51,7 +52,7 @@ impl Solver2 {
         };
 
         let m_value = match m_parameter {
-            None => 1000.0,
+            None => 100.0,
             Some(m) => f64::min(m, 1000000.0).max(10.0),
         };
 
